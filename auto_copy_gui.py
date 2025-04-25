@@ -22,6 +22,7 @@ class AutoCopyApp:
         self.excel_monitor_thread = None
         self.excel_cell_monitor_active = False  # 新增标志，表示Excel单元格监控是否活跃
         self.clipboard_content = ""  # 当前剪贴板内容
+        self.confirmation_dialog = None  # 确认对话框引用
         
         self.root = root
         self.root.title("AutoCopy Tool")
@@ -167,33 +168,42 @@ class AutoCopyApp:
         """更新剪贴板内容显示"""
         try:
             content = pyperclip.paste()
-            self.clipboard_content = content
             
-            # 更新文本显示
-            self.clipboard_text.config(state=tk.NORMAL)
-            self.clipboard_text.delete(1.0, tk.END)
-            
-            # 限制显示长度，防止过长内容
-            if len(content) > 500:
-                display_content = content[:500] + "... (content truncated)"
-            else:
-                display_content = content
+            # 只有在内容变化时更新
+            if content != self.clipboard_content:
+                self.clipboard_content = content
                 
-            self.clipboard_text.insert(tk.END, display_content)
-            self.clipboard_text.config(state=tk.DISABLED)
-            
-            # 检查是否匹配格式
-            match_result = self.is_valid_format(content)
-            if match_result:
-                self.match_status_label.config(text="Matches Pattern", foreground="green")
-            else:
-                self.match_status_label.config(text="Does Not Match", foreground="red")
+                # 更新文本显示
+                self.clipboard_text.config(state=tk.NORMAL)
+                self.clipboard_text.delete(1.0, tk.END)
                 
+                # 限制显示长度，防止过长内容
+                if len(content) > 500:
+                    display_content = content[:500] + "... (content truncated)"
+                else:
+                    display_content = content
+                    
+                self.clipboard_text.insert(tk.END, display_content)
+                self.clipboard_text.config(state=tk.DISABLED)
+                
+                # 检查是否匹配格式
+                match_result = self.is_valid_format(content)
+                if match_result:
+                    self.match_status_label.config(text="Matches Pattern", foreground="green")
+                    
+                    # 如果正在监控并且匹配成功，显示确认对话框
+                    if self.running:
+                        self.show_paste_confirmation(content)
+                else:
+                    self.match_status_label.config(text="Does Not Match", foreground="red")
+            
             # 设置剪贴板检查定时器 - 每秒更新一次
             self.root.after(1000, self.update_clipboard_display)
             
         except Exception as e:
             self.log(f"Error updating clipboard display: {str(e)}")
+            # 继续检查，即使有错误
+            self.root.after(1000, self.update_clipboard_display)
     
     def schedule_cell_check(self):
         """定期检查Excel单元格"""
@@ -202,6 +212,81 @@ class AutoCopyApp:
         
         # 每100毫秒检查一次单元格
         self.excel_check_timer = self.root.after(100, self.schedule_cell_check)
+    
+    def show_paste_confirmation(self, content):
+        """显示粘贴确认对话框，按回车键确认粘贴"""
+        # 如果已经有弹窗，先关闭
+        if self.confirmation_dialog is not None and self.confirmation_dialog.winfo_exists():
+            self.confirmation_dialog.destroy()
+            
+        # 创建新的确认对话框
+        self.confirmation_dialog = tk.Toplevel(self.root)
+        self.confirmation_dialog.title("内容检测到 - 按回车键粘贴")
+        self.confirmation_dialog.geometry("500x200")
+        self.confirmation_dialog.resizable(False, False)
+        
+        # 确保对话框总是在前台
+        self.confirmation_dialog.attributes('-topmost', True)
+        
+        # 设置窗口为模态，阻止其他窗口交互
+        self.confirmation_dialog.grab_set()
+        
+        # 制作闪烁效果的背景
+        frame = ttk.Frame(self.confirmation_dialog, padding="20")
+        frame.pack(fill=tk.BOTH, expand=True)
+        
+        # 内容预览
+        preview_label = ttk.Label(frame, text="内容匹配成功!", font=("Arial", 12, "bold"))
+        preview_label.pack(pady=(0, 10))
+        
+        # 内容显示
+        content_text = scrolledtext.ScrolledText(frame, height=4, width=50, wrap=tk.WORD)
+        content_text.pack(fill=tk.BOTH, expand=True, pady=5)
+        content_text.insert(tk.END, content)
+        content_text.config(state=tk.DISABLED)
+        
+        # 单元格信息
+        cell_info = ttk.Label(frame, text=f"目标单元格: {self.current_cell}")
+        cell_info.pack(pady=5)
+        
+        # 确认按钮
+        button_frame = ttk.Frame(frame)
+        button_frame.pack(fill=tk.X, pady=10)
+        
+        paste_button = ttk.Button(button_frame, text="粘贴 (回车)", command=lambda: self._confirm_paste(content))
+        paste_button.pack(side=tk.LEFT, padx=5)
+        
+        cancel_button = ttk.Button(button_frame, text="取消 (Esc)", command=lambda: self.confirmation_dialog.destroy())
+        cancel_button.pack(side=tk.RIGHT, padx=5)
+        
+        # 焦点设置到粘贴按钮并绑定回车键
+        paste_button.focus_set()
+        
+        # 绑定按键
+        self.confirmation_dialog.bind("<Return>", lambda event: self._confirm_paste(content))
+        self.confirmation_dialog.bind("<Escape>", lambda event: self.confirmation_dialog.destroy())
+        
+        # 闪烁效果
+        self._blink_background(frame, 5)
+    
+    def _blink_background(self, widget, times):
+        """创建闪烁效果以引起注意"""
+        if times <= 0:
+            return
+            
+        # 交替颜色
+        current_bg = widget.cget("background")
+        highlight_bg = "#90EE90"  # 浅绿色
+        
+        widget.configure(background=highlight_bg)
+        self.root.after(300, lambda: widget.configure(background=current_bg))
+        self.root.after(600, lambda: self._blink_background(widget, times-1))
+    
+    def _confirm_paste(self, content):
+        """确认粘贴操作"""
+        if self.confirmation_dialog and self.confirmation_dialog.winfo_exists():
+            self.confirmation_dialog.destroy()
+            self.paste_to_excel()
     
     def refresh_current_cell(self):
         """刷新当前选中的单元格"""
@@ -406,48 +491,9 @@ class AutoCopyApp:
                         if self.excel_app:
                             self.refresh_current_cell()
                         
-                        # 检查新内容是否符合指定格式
-                        if self.is_valid_format(current_content):
-                            excel_info = f" (Target: {self.target_excel}, Cell: {self.current_cell})" 
-                            self.log(f"Content matches pattern, executing paste operation{excel_info}...")
-                            
-                            # 执行粘贴操作 - 尝试直接设置Excel单元格值
-                            if self.excel_app:
-                                try:
-                                    # 刷新一次单元格位置，确保粘贴到最新选中的单元格
-                                    self.refresh_current_cell()
-                                    
-                                    # 直接设置选中单元格的值
-                                    self.excel_app.ActiveCell.Value = current_content
-                                    self.log(f"Content directly set to cell {self.current_cell}")
-                                except Exception as ex:
-                                    error_msg = str(ex)
-                                    self.log(f"Error setting cell value: {error_msg}")
-                                    
-                                    # 尝试使用另一种方法
-                                    try:
-                                        self.log("Trying alternative method...")
-                                        # 激活Excel窗口
-                                        self.excel_app.Visible = True
-                                        self.excel_app.ActiveWindow.Activate()
-                                        
-                                        # 确保选中了正确的单元格
-                                        cell_range = self.excel_app.ActiveSheet.Range(self.current_cell)
-                                        cell_range.Select()
-                                        
-                                        # 使用键盘快捷键粘贴
-                                        pyautogui.hotkey('ctrl', 'v')
-                                        self.log("Content pasted using keyboard shortcut")
-                                    except Exception as ex2:
-                                        self.log(f"Alternative method failed: {str(ex2)}")
-                            else:
-                                # 没有Excel连接时使用键盘快捷键
-                                pyautogui.hotkey('ctrl', 'v')
-                                self.log("Content pasted using keyboard shortcut")
-                        else:
-                            self.log("Content doesn't match pattern, ignoring")
-                        
+                        # 注意：现在使用update_clipboard_display方法显示确认对话框，不再在此处执行自动粘贴
                         self.previous_content = current_content
+                        
                 except Exception as e:
                     self.log(f"Monitoring loop error: {str(e)}")
                 
@@ -493,6 +539,12 @@ class AutoCopyApp:
             self.monitor_thread.daemon = True
             self.monitor_thread.start()
             
+            # 提示用户操作方法
+            self.log("Monitoring mode: Press Enter when prompted to paste content")
+            messagebox.showinfo("Monitoring Started", 
+                               "当检测到匹配内容时，确认对话框会自动弹出。\n"
+                               "只需按下回车键即可将内容粘贴到Excel。")
+            
         except Exception as e:
             self.log(f"Start monitoring error: {str(e)}")
             messagebox.showerror("Error", f"Failed to start monitoring: {str(e)}")
@@ -509,6 +561,10 @@ class AutoCopyApp:
             # Re-enable Excel target setting
             self.set_excel_button.config(state=tk.NORMAL)
             
+            # 关闭任何打开的确认对话框
+            if self.confirmation_dialog and self.confirmation_dialog.winfo_exists():
+                self.confirmation_dialog.destroy()
+                
             self.log("Monitoring stopped")
         except Exception as e:
             self.log(f"Stop monitoring error: {str(e)}")
