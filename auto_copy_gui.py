@@ -23,6 +23,8 @@ class AutoCopyApp:
         self.excel_cell_monitor_active = False  # 新增标志，表示Excel单元格监控是否活跃
         self.clipboard_content = ""  # 当前剪贴板内容
         self.confirmation_dialog = None  # 确认对话框引用
+        self.last_pasted_content = ""  # 上次粘贴的内容
+        self.last_paste_time = 0  # 上次粘贴的时间戳
         
         self.root = root
         self.root.title("AutoCopy Tool")
@@ -112,14 +114,22 @@ class AutoCopyApp:
         format_frame.pack(fill=tk.X, pady=5)
         
         ttk.Label(format_frame, text="Pattern:").grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
-        self.format_var = tk.StringVar(value=r'^20\d{2}_\d{2}_\d{2}_\d{6}_DA\d{5}_A')
+        self.format_var = tk.StringVar(value=r'^20\d{2}_\d{2}_\d{2}_\d{6}')
         format_entry = ttk.Entry(format_frame, textvariable=self.format_var, width=40)
         format_entry.grid(row=0, column=1, sticky=tk.W, padx=5, pady=5)
         
+        # 添加防重复粘贴时间间隔设置
+        ttk.Label(format_frame, text="Duplicate Protection (s):").grid(row=1, column=0, sticky=tk.W, padx=5, pady=5)
+        self.duplicate_time_var = tk.StringVar(value="3")  # 默认3秒
+        duplicate_entry = ttk.Spinbox(format_frame, from_=1, to=10, width=5, textvariable=self.duplicate_time_var)
+        duplicate_entry.grid(row=1, column=1, sticky=tk.W, padx=5, pady=5)
+        ttk.Label(format_frame, text="Prevention of duplicate pasting within the specified seconds", 
+                  font=("Arial", 8)).grid(row=1, column=2, sticky=tk.W, padx=5, pady=5)
+        
         # 匹配状态显示
-        ttk.Label(format_frame, text="Match Status:").grid(row=1, column=0, sticky=tk.W, padx=5, pady=5)
+        ttk.Label(format_frame, text="Match Status:").grid(row=2, column=0, sticky=tk.W, padx=5, pady=5)
         self.match_status_label = ttk.Label(format_frame, text="Not checked")
-        self.match_status_label.grid(row=1, column=1, sticky=tk.W, padx=5, pady=5)
+        self.match_status_label.grid(row=2, column=1, sticky=tk.W, padx=5, pady=5)
         
         # 日志区域
         log_frame = ttk.LabelFrame(main_frame, text="Log", padding="10")
@@ -139,11 +149,12 @@ class AutoCopyApp:
         self.schedule_cell_check()
         self.update_clipboard_display()
     
-    def paste_to_excel(self):
+    def paste_to_excel(self, show_error_dialog=True):
         """手动将剪贴板内容粘贴到Excel"""
         if not self.excel_app:
-            messagebox.showwarning("Warning", "Not connected to Excel. Please connect first.")
-            return
+            if show_error_dialog:
+                messagebox.showwarning("Warning", "Not connected to Excel. Please connect first.")
+            return False
             
         try:
             # 刷新当前单元格
@@ -168,18 +179,42 @@ class AutoCopyApp:
             
             # 更新显示
             self.update_clipboard_display()
+            return True  # 返回成功状态
         except Exception as e:
             error_msg = f"Failed to paste: {str(e)}"
             self.log(error_msg)
-            messagebox.showerror("Paste Error", error_msg)
+            if show_error_dialog:
+                messagebox.showerror("Paste Error", error_msg)
+            return False  # 返回失败状态
     
     def update_clipboard_display(self):
         """更新剪贴板内容显示"""
         try:
             content = pyperclip.paste()
             
-            # 只有在内容变化时更新
-            if content != self.clipboard_content:
+            # 只有在内容变化时更新 - 使用更严格的比较并防止重复触发
+            if content != self.clipboard_content and content.strip() != "":
+                # 记录上一次粘贴的内容和时间戳，用于防止重复处理
+                current_time = time.time()
+                
+                # 检查是否是在短时间内尝试粘贴相同内容（防止重复）
+                is_duplicate = False
+                if hasattr(self, 'last_pasted_content') and hasattr(self, 'last_paste_time'):
+                    # 获取用户设置的防重复时间间隔（秒）
+                    try:
+                        duplicate_threshold = float(self.duplicate_time_var.get())
+                    except (ValueError, AttributeError):
+                        duplicate_threshold = 3.0  # 默认值
+                    
+                    time_diff = current_time - self.last_paste_time
+                    content_same = content == self.last_pasted_content
+                    
+                    # 如果在设定时间内尝试粘贴相同内容，视为重复操作
+                    if content_same and time_diff < duplicate_threshold:
+                        is_duplicate = True
+                        self.log(f"Ignored duplicate paste attempt (within {time_diff:.1f}s, threshold: {duplicate_threshold}s)")
+                
+                # 更新记录的剪贴板内容
                 self.clipboard_content = content
                 
                 # 更新文本显示
@@ -200,9 +235,14 @@ class AutoCopyApp:
                 if match_result:
                     self.match_status_label.config(text="Matches Pattern", foreground="green")
                     
-                    # 如果正在监控并且匹配成功，显示确认对话框
-                    if self.running:
-                        self.show_paste_confirmation(content)
+                    # 如果正在监控并且匹配成功且不是重复内容，显示通知并自动粘贴
+                    if self.running and not is_duplicate:
+                        # 保存此次操作数据，用于防止重复
+                        self.last_pasted_content = content
+                        self.last_paste_time = current_time
+                        
+                        # 延迟一小段时间后执行粘贴操作，给UI时间更新
+                        self.root.after(100, lambda: self.auto_paste_with_notification(content))
                 else:
                     self.match_status_label.config(text="Does Not Match", foreground="red")
             
@@ -214,6 +254,135 @@ class AutoCopyApp:
             # 继续检查，即使有错误
             self.root.after(1000, self.update_clipboard_display)
     
+    def auto_paste_with_notification(self, content):
+        """自动粘贴并显示简短通知"""
+        try:
+            # 执行粘贴操作 - 传入False禁用错误对话框
+            success = self.paste_to_excel(show_error_dialog=False)
+            
+            # 显示结果通知
+            if success:
+                self.show_success_notification(content)
+            else:
+                error_msg = "Paste failed. Please check Excel connection."
+                self.log(error_msg)
+                self.show_error_notification(error_msg)
+                
+        except Exception as e:
+            self.log(f"Auto paste error: {str(e)}")
+            self.show_error_notification(f"Paste error: {str(e)}")
+    
+    def show_success_notification(self, content):
+        """显示成功粘贴的通知"""
+        # 关闭之前的通知
+        if self.confirmation_dialog and self.confirmation_dialog.winfo_exists():
+            self.confirmation_dialog.destroy()
+        
+        # 创建无边框通知窗口
+        self.confirmation_dialog = tk.Toplevel(self.root)
+        self.confirmation_dialog.overrideredirect(True)  # 移除所有窗口装饰
+        self.confirmation_dialog.attributes('-topmost', True)  # 保持在最前面
+        
+        # 固定位置 - 右下角
+        screen_width = self.root.winfo_screenwidth()
+        screen_height = self.root.winfo_screenheight()
+        window_width = 350
+        window_height = 100
+        x_position = screen_width - window_width - 20
+        y_position = screen_height - window_height - 50
+        self.confirmation_dialog.geometry(f"{window_width}x{window_height}+{x_position}+{y_position}")
+        
+        # 设置绿色背景
+        self.confirmation_dialog.configure(bg="#D4EFDF")
+        
+        # 创建标签
+        success_icon = "✓"  # 成功图标
+        title_text = f"{success_icon} Content pasted to cell {self.current_cell}"
+        title_label = tk.Label(
+            self.confirmation_dialog,
+            text=title_text,
+            font=("Arial", 10, "bold"),
+            bg="#D4EFDF",
+            fg="#196F3D",
+            padx=10, pady=5
+        )
+        title_label.pack(fill=tk.X)
+        
+        # 显示简短的内容预览
+        preview = content if len(content) < 40 else content[:37] + "..."
+        content_label = tk.Label(
+            self.confirmation_dialog,
+            text=preview,
+            font=("Consolas", 9),
+            bg="#D4EFDF",
+            fg="#1E8449",
+            padx=10
+        )
+        content_label.pack(fill=tk.X)
+        
+        # 自动关闭通知的倒计时
+        self._start_notification_timer(3)  # 3秒后自动关闭
+    
+    def show_error_notification(self, error_message):
+        """显示错误通知"""
+        # 关闭之前的通知
+        if self.confirmation_dialog and self.confirmation_dialog.winfo_exists():
+            self.confirmation_dialog.destroy()
+        
+        # 创建无边框通知窗口
+        self.confirmation_dialog = tk.Toplevel(self.root)
+        self.confirmation_dialog.overrideredirect(True)  # 移除所有窗口装饰
+        self.confirmation_dialog.attributes('-topmost', True)  # 保持在最前面
+        
+        # 固定位置 - 右下角
+        screen_width = self.root.winfo_screenwidth()
+        screen_height = self.root.winfo_screenheight()
+        window_width = 350
+        window_height = 100
+        x_position = screen_width - window_width - 20
+        y_position = screen_height - window_height - 50
+        self.confirmation_dialog.geometry(f"{window_width}x{window_height}+{x_position}+{y_position}")
+        
+        # 设置红色背景
+        self.confirmation_dialog.configure(bg="#FADBD8")
+        
+        # 创建标签
+        error_icon = "✗"  # 错误图标
+        title_label = tk.Label(
+            self.confirmation_dialog,
+            text=f"{error_icon} Paste Failed",
+            font=("Arial", 10, "bold"),
+            bg="#FADBD8",
+            fg="#943126",
+            padx=10, pady=5
+        )
+        title_label.pack(fill=tk.X)
+        
+        # 显示错误信息
+        error_label = tk.Label(
+            self.confirmation_dialog,
+            text=error_message,
+            font=("Arial", 9),
+            bg="#FADBD8",
+            fg="#C0392B",
+            wraplength=330,
+            padx=10
+        )
+        error_label.pack(fill=tk.X)
+        
+        # 自动关闭通知的倒计时
+        self._start_notification_timer(5)  # 5秒后自动关闭
+    
+    def _start_notification_timer(self, seconds):
+        """启动通知自动关闭倒计时"""
+        self.root.after(seconds * 1000, self._close_notification)
+        
+    def _close_notification(self):
+        """关闭通知窗口"""
+        if self.confirmation_dialog and self.confirmation_dialog.winfo_exists():
+            self.confirmation_dialog.destroy()
+            self.confirmation_dialog = None
+    
     def schedule_cell_check(self):
         """定期检查Excel单元格"""
         if self.excel_app:
@@ -221,116 +390,6 @@ class AutoCopyApp:
         
         # 每100毫秒检查一次单元格
         self.excel_check_timer = self.root.after(100, self.schedule_cell_check)
-    
-    def show_paste_confirmation(self, content):
-        """显示粘贴确认对话框，按回车键确认粘贴"""
-        # 如果已经有弹窗，先关闭
-        if self.confirmation_dialog is not None and self.confirmation_dialog.winfo_exists():
-            self.confirmation_dialog.destroy()
-            
-        # 创建新的确认对话框
-        self.confirmation_dialog = tk.Toplevel(self.root)
-        self.confirmation_dialog.title("内容检测到 - 按回车键粘贴")
-        self.confirmation_dialog.geometry("500x200")
-        self.confirmation_dialog.resizable(False, False)
-        
-        # 确保对话框总是在前台和最顶层
-        self.confirmation_dialog.attributes('-topmost', True)
-        
-        # 设置窗口为模态，阻止其他窗口交互
-        self.confirmation_dialog.grab_set()
-        
-        # 强制对话框成为活动窗口
-        self.confirmation_dialog.focus_force()
-        
-        # 设置窗口样式为工具窗口，在任务栏中不显示
-        if hasattr(self.confirmation_dialog, 'attributes'):
-            try:
-                # 在Windows上设置为工具窗口类型
-                self.confirmation_dialog.attributes('-toolwindow', True)
-            except Exception:
-                pass
-        
-        # 制作闪烁效果的背景
-        frame = ttk.Frame(self.confirmation_dialog, padding="20")
-        frame.pack(fill=tk.BOTH, expand=True)
-        
-        # 内容预览
-        preview_label = ttk.Label(frame, text="内容匹配成功!", font=("Arial", 12, "bold"))
-        preview_label.pack(pady=(0, 10))
-        
-        # 内容显示
-        content_text = scrolledtext.ScrolledText(frame, height=4, width=50, wrap=tk.WORD)
-        content_text.pack(fill=tk.BOTH, expand=True, pady=5)
-        content_text.insert(tk.END, content)
-        content_text.config(state=tk.DISABLED)
-        
-        # 单元格信息
-        cell_info = ttk.Label(frame, text=f"目标单元格: {self.current_cell}")
-        cell_info.pack(pady=5)
-        
-        # 确认按钮
-        button_frame = ttk.Frame(frame)
-        button_frame.pack(fill=tk.X, pady=10)
-        
-        paste_button = ttk.Button(button_frame, text="粘贴 (回车)", command=lambda: self._confirm_paste(content))
-        paste_button.pack(side=tk.LEFT, padx=5)
-        
-        cancel_button = ttk.Button(button_frame, text="取消 (Esc)", command=lambda: self.confirmation_dialog.destroy())
-        cancel_button.pack(side=tk.RIGHT, padx=5)
-        
-        # 焦点设置到粘贴按钮
-        paste_button.focus_set()
-        
-        # 绑定按键
-        self.confirmation_dialog.bind("<Return>", lambda event: self._confirm_paste(content))
-        self.confirmation_dialog.bind("<Escape>", lambda event: self.confirmation_dialog.destroy())
-        
-        # 闪烁效果
-        self._blink_background(frame, 5)
-        
-        # 定时检查焦点，确保对话框始终保持焦点
-        self._ensure_dialog_focus()
-    
-    def _ensure_dialog_focus(self):
-        """确保确认对话框保持焦点"""
-        if self.confirmation_dialog and self.confirmation_dialog.winfo_exists():
-            try:
-                # 确保对话框保持在顶层
-                self.confirmation_dialog.attributes('-topmost', True)
-                self.confirmation_dialog.lift()
-                
-                # 如果对话框没有焦点，尝试重新获取焦点
-                if self.confirmation_dialog.focus_get() is None:
-                    self.confirmation_dialog.focus_force()
-                
-                # 定时再次检查焦点状态
-                self.root.after(200, self._ensure_dialog_focus)
-            except Exception as e:
-                self.log(f"Focus error: {str(e)}")
-    
-    def _blink_background(self, widget, times):
-        """创建闪烁效果以引起注意"""
-        if times <= 0:
-            return
-            
-        # 交替颜色
-        current_bg = widget.cget("background")
-        highlight_bg = "#90EE90"  # 浅绿色
-        
-        widget.configure(background=highlight_bg)
-        self.root.after(300, lambda: widget.configure(background=current_bg))
-        self.root.after(600, lambda: self._blink_background(widget, times-1))
-    
-    def _confirm_paste(self, content):
-        """确认粘贴操作"""
-        if self.confirmation_dialog and self.confirmation_dialog.winfo_exists():
-            # 关闭确认对话框
-            self.confirmation_dialog.destroy()
-            # 执行粘贴操作
-            self.paste_to_excel()
-            # 更新剪贴板显示
-            self.update_clipboard_display()
     
     def refresh_current_cell(self):
         """刷新当前选中的单元格"""
@@ -584,11 +643,12 @@ class AutoCopyApp:
             self.monitor_thread.start()
             
             # 提示用户操作方法
-            self.log("Monitoring mode: Press Enter when prompted to paste content")
+            self.log("Auto-paste mode: Content will be pasted automatically when detected")
             messagebox.showinfo("Monitoring Started", 
-                               "当检测到匹配内容时，确认对话框会自动弹出。\n"
-                               "只需按下回车键即可将内容粘贴到Excel。\n\n"
-                               "注意: 如果单元格已有内容，新内容将自动添加到新行，而不会覆盖现有内容。")
+                               "Auto-paste mode enabled.\n\n"
+                               "When matching content is detected, it will be automatically pasted to the current Excel cell with a notification.\n"
+                               "If the cell already has content, new content will be added on a new line.\n\n"
+                               "No action required - the process is fully automated.")
             
         except Exception as e:
             self.log(f"Start monitoring error: {str(e)}")
@@ -606,9 +666,10 @@ class AutoCopyApp:
             # Re-enable Excel target setting
             self.set_excel_button.config(state=tk.NORMAL)
             
-            # 关闭任何打开的确认对话框
+            # 关闭任何打开的通知窗口
             if self.confirmation_dialog and self.confirmation_dialog.winfo_exists():
                 self.confirmation_dialog.destroy()
+                self.confirmation_dialog = None
                 
             self.log("Monitoring stopped")
         except Exception as e:
@@ -617,6 +678,13 @@ class AutoCopyApp:
     def on_closing(self):
         """关闭窗口处理"""
         try:
+            # 尝试解绑所有全局快捷键
+            for key in ("<Return>", "<KP_Enter>", "<Escape>"):
+                try:
+                    self.root.unbind_all(key)
+                except:
+                    pass
+            
             if self.running:
                 if messagebox.askokcancel("Exit", "Monitoring is still running. Are you sure you want to exit?"):
                     self.stop_monitoring()
@@ -625,6 +693,10 @@ class AutoCopyApp:
                     # 取消定时器
                     if self.excel_check_timer:
                         self.root.after_cancel(self.excel_check_timer)
+                    
+                    # 关闭确认对话框
+                    if self.confirmation_dialog and self.confirmation_dialog.winfo_exists():
+                        self.confirmation_dialog.destroy()
                     
                     # 释放Excel资源
                     if self.excel_app:
@@ -636,6 +708,10 @@ class AutoCopyApp:
                 # 取消定时器
                 if self.excel_check_timer:
                     self.root.after_cancel(self.excel_check_timer)
+                
+                # 关闭确认对话框
+                if self.confirmation_dialog and self.confirmation_dialog.winfo_exists():
+                    self.confirmation_dialog.destroy()
                 
                 # 释放Excel资源
                 if self.excel_app:
