@@ -152,10 +152,19 @@ class AutoCopyApp:
             # 获取剪贴板内容
             content = pyperclip.paste()
             
-            # 直接设置Excel单元格的值
-            self.excel_app.ActiveCell.Value = content
-            
-            self.log(f"Content pasted to cell {self.current_cell}")
+            # 检查当前单元格是否已有内容
+            current_value = self.excel_app.ActiveCell.Value
+            if current_value:
+                # 如果单元格已有内容，则在现有内容后添加换行和新内容
+                self.log("Cell already has content, appending with new line")
+                # Excel中的换行符是Chr(10)
+                new_value = f"{current_value}{chr(10)}{content}"
+                self.excel_app.ActiveCell.Value = new_value
+                self.log(f"Content appended to cell {self.current_cell}")
+            else:
+                # 单元格为空，直接设置值
+                self.excel_app.ActiveCell.Value = content
+                self.log(f"Content set to cell {self.current_cell}")
             
             # 更新显示
             self.update_clipboard_display()
@@ -225,11 +234,22 @@ class AutoCopyApp:
         self.confirmation_dialog.geometry("500x200")
         self.confirmation_dialog.resizable(False, False)
         
-        # 确保对话框总是在前台
+        # 确保对话框总是在前台和最顶层
         self.confirmation_dialog.attributes('-topmost', True)
         
         # 设置窗口为模态，阻止其他窗口交互
         self.confirmation_dialog.grab_set()
+        
+        # 强制对话框成为活动窗口
+        self.confirmation_dialog.focus_force()
+        
+        # 设置窗口样式为工具窗口，在任务栏中不显示
+        if hasattr(self.confirmation_dialog, 'attributes'):
+            try:
+                # 在Windows上设置为工具窗口类型
+                self.confirmation_dialog.attributes('-toolwindow', True)
+            except Exception:
+                pass
         
         # 制作闪烁效果的背景
         frame = ttk.Frame(self.confirmation_dialog, padding="20")
@@ -259,7 +279,7 @@ class AutoCopyApp:
         cancel_button = ttk.Button(button_frame, text="取消 (Esc)", command=lambda: self.confirmation_dialog.destroy())
         cancel_button.pack(side=tk.RIGHT, padx=5)
         
-        # 焦点设置到粘贴按钮并绑定回车键
+        # 焦点设置到粘贴按钮
         paste_button.focus_set()
         
         # 绑定按键
@@ -268,6 +288,26 @@ class AutoCopyApp:
         
         # 闪烁效果
         self._blink_background(frame, 5)
+        
+        # 定时检查焦点，确保对话框始终保持焦点
+        self._ensure_dialog_focus()
+    
+    def _ensure_dialog_focus(self):
+        """确保确认对话框保持焦点"""
+        if self.confirmation_dialog and self.confirmation_dialog.winfo_exists():
+            try:
+                # 确保对话框保持在顶层
+                self.confirmation_dialog.attributes('-topmost', True)
+                self.confirmation_dialog.lift()
+                
+                # 如果对话框没有焦点，尝试重新获取焦点
+                if self.confirmation_dialog.focus_get() is None:
+                    self.confirmation_dialog.focus_force()
+                
+                # 定时再次检查焦点状态
+                self.root.after(200, self._ensure_dialog_focus)
+            except Exception as e:
+                self.log(f"Focus error: {str(e)}")
     
     def _blink_background(self, widget, times):
         """创建闪烁效果以引起注意"""
@@ -285,8 +325,12 @@ class AutoCopyApp:
     def _confirm_paste(self, content):
         """确认粘贴操作"""
         if self.confirmation_dialog and self.confirmation_dialog.winfo_exists():
+            # 关闭确认对话框
             self.confirmation_dialog.destroy()
+            # 执行粘贴操作
             self.paste_to_excel()
+            # 更新剪贴板显示
+            self.update_clipboard_display()
     
     def refresh_current_cell(self):
         """刷新当前选中的单元格"""
@@ -543,7 +587,8 @@ class AutoCopyApp:
             self.log("Monitoring mode: Press Enter when prompted to paste content")
             messagebox.showinfo("Monitoring Started", 
                                "当检测到匹配内容时，确认对话框会自动弹出。\n"
-                               "只需按下回车键即可将内容粘贴到Excel。")
+                               "只需按下回车键即可将内容粘贴到Excel。\n\n"
+                               "注意: 如果单元格已有内容，新内容将自动添加到新行，而不会覆盖现有内容。")
             
         except Exception as e:
             self.log(f"Start monitoring error: {str(e)}")
