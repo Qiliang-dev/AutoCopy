@@ -24,7 +24,6 @@ def monitor_clipboard():
                 # 检查新内容是否符合指定格式
                 if is_valid_format(current_content):
                     print("Content matches pattern, executing paste operation...")
-                    # 给用户一点时间切换到Excel并选中目标单元格
                     time.sleep(0.5)
                     # 执行粘贴操作
                     pyautogui.hotkey('ctrl', 'v')
