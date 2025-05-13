@@ -1,0 +1,8 @@
+=== AutoCopy 使用说明 === 
+ 
+1. 首次使用：运行"install_dependencies.bat"安装必要依赖 
+2. 启动程序：双击"AutoCopy.bat" 
+3. 连接Excel：在程序中点击"Connect to Excel"按钮 
+4. 开始监控：点击"Start Monitoring"开始自动复制功能 
+ 
+详细说明请参阅README.txt文件 

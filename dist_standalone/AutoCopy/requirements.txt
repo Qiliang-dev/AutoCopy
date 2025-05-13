@@ -1,0 +1,3 @@
+pyperclip 
+pyautogui 
+pywin32 
