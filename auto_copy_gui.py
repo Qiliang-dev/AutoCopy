@@ -25,6 +25,7 @@ class AutoCopyApp:
         self.confirmation_dialog = None  # 确认对话框引用
         self.last_pasted_content = ""  # 上次粘贴的内容
         self.last_paste_time = 0  # 上次粘贴的时间戳
+        self.auto_move_next = False  # 新增：是否自动移动到下一行
         
         self.root = root
         self.root.title("AutoCopy Tool")
@@ -99,6 +100,11 @@ class AutoCopyApp:
         # 退出按钮
         self.exit_button = ttk.Button(control_frame, text="Exit", command=self.on_closing)
         self.exit_button.grid(row=0, column=4, padx=5, pady=5, sticky=tk.E)
+        
+        # 在control_frame中添加自动移动到下一行的开关按钮
+        self.auto_move_button = ttk.Button(control_frame, text="Auto Move Next: OFF", 
+                                         command=self.toggle_auto_move)
+        self.auto_move_button.grid(row=0, column=5, padx=5, pady=5, sticky=tk.W)
         
         # 剪贴板内容显示区域
         clipboard_frame = ttk.LabelFrame(main_frame, text="Current Clipboard Content", padding="10")
@@ -322,6 +328,26 @@ class AutoCopyApp:
         
         # 自动关闭通知的倒计时
         self._start_notification_timer(3)  # 3秒后自动关闭
+        
+        # 在显示通知后，如果启用了自动移动到下一行，则执行移动
+        if self.auto_move_next and self.excel_app:
+            try:
+                # 获取当前单元格的行和列
+                current_cell = self.excel_app.ActiveCell
+                current_row = current_cell.Row
+                current_column = current_cell.Column
+                
+                # 移动到下一行，保持列不变
+                next_cell = self.excel_app.ActiveSheet.Cells(current_row + 1, current_column)
+                next_cell.Select()
+                
+                # 更新当前单元格显示
+                self.refresh_current_cell()
+                
+                # 记录日志
+                self.log(f"Automatically moved to next row: {next_cell.Address}")
+            except Exception as e:
+                self.log(f"Error moving to next row: {str(e)}")
     
     def show_error_notification(self, error_message):
         """显示错误通知"""
@@ -721,6 +747,13 @@ class AutoCopyApp:
         except Exception as e:
             print(f"Error closing application: {str(e)}")
             self.root.destroy()
+
+    def toggle_auto_move(self):
+        """切换自动移动到下一行的功能"""
+        self.auto_move_next = not self.auto_move_next
+        button_text = "Auto Move Next: ON" if self.auto_move_next else "Auto Move Next: OFF"
+        self.auto_move_button.config(text=button_text)
+        self.log(f"Auto move to next row: {'Enabled' if self.auto_move_next else 'Disabled'}")
 
 def main():
     try:
