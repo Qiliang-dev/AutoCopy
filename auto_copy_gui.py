@@ -26,6 +26,7 @@ class AutoCopyApp:
         self.last_pasted_content = ""  # 上次粘贴的内容
         self.last_paste_time = 0  # 上次粘贴的时间戳
         self.auto_move_next = False  # 新增：是否自动移动到下一行
+        self.row_skip_count = 1  # 新增：自动移动时跳过的行数
         self.reminder_time = 20  # 新增：提醒等待时间（秒）
         self.reminder_timer = None  # 新增：提醒定时器
         self.reminder_dialog = None  # 新增：提醒对话框
@@ -83,33 +84,25 @@ class AutoCopyApp:
         self.status_label = ttk.Label(status_frame, text="Not Running")
         self.status_label.grid(row=2, column=1, sticky=tk.W, pady=5)
         
-        # 控制按钮区域 - 移到状态区域下方，确保可见
+        # 控制按钮区域 - 分两行
         control_frame = ttk.LabelFrame(main_frame, text="Controls", padding="10")
         control_frame.pack(fill=tk.X, pady=5)
         
-        # 使用Grid布局代替Pack，确保按钮正确排列
+        # 第一行按钮
         self.start_button = ttk.Button(control_frame, text="Start Monitoring", command=self.start_monitoring)
         self.start_button.grid(row=0, column=0, padx=5, pady=5, sticky=tk.W)
-        
         self.stop_button = ttk.Button(control_frame, text="Stop Monitoring", command=self.stop_monitoring, state=tk.DISABLED)
         self.stop_button.grid(row=0, column=1, padx=5, pady=5, sticky=tk.W)
-        
-        # 清除日志按钮
         self.clear_log_button = ttk.Button(control_frame, text="Clear Log", command=self.clear_log)
         self.clear_log_button.grid(row=0, column=2, padx=5, pady=5, sticky=tk.W)
-        
-        # 更新剪贴板按钮
         self.update_clipboard_button = ttk.Button(control_frame, text="Refresh Clipboard", command=self.update_clipboard_display)
         self.update_clipboard_button.grid(row=0, column=3, padx=5, pady=5, sticky=tk.W)
         
-        # 退出按钮
+        # 第二行按钮
         self.exit_button = ttk.Button(control_frame, text="Exit", command=self.on_closing)
-        self.exit_button.grid(row=0, column=4, padx=5, pady=5, sticky=tk.E)
-        
-        # 在control_frame中添加自动移动到下一行的开关按钮
-        self.auto_move_button = ttk.Button(control_frame, text="Auto Move Next: OFF", 
-                                         command=self.toggle_auto_move)
-        self.auto_move_button.grid(row=0, column=5, padx=5, pady=5, sticky=tk.W)
+        self.exit_button.grid(row=1, column=0, padx=5, pady=5, sticky=tk.W)
+        self.auto_move_button = ttk.Button(control_frame, text="Auto Move Next: OFF", command=self.toggle_auto_move)
+        self.auto_move_button.grid(row=1, column=1, padx=5, pady=5, sticky=tk.W)
         
         # 剪贴板内容显示区域
         clipboard_frame = ttk.LabelFrame(main_frame, text="Current Clipboard Content", padding="10")
@@ -120,35 +113,38 @@ class AutoCopyApp:
         self.clipboard_text.insert(tk.END, "(No content)")
         self.clipboard_text.config(state=tk.DISABLED)
         
-        # 匹配格式控制
+        # Pattern Settings 区域
         format_frame = ttk.LabelFrame(main_frame, text="Pattern Settings", padding="10")
         format_frame.pack(fill=tk.X, pady=5)
         
         ttk.Label(format_frame, text="Pattern:").grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
         self.format_var = tk.StringVar(value=r'^20\d{2}_\d{2}_\d{2}_\d{6}')
         format_entry = ttk.Entry(format_frame, textvariable=self.format_var, width=40)
-        format_entry.grid(row=0, column=1, sticky=tk.W, padx=5, pady=5)
+        format_entry.grid(row=0, column=1, sticky=tk.W, padx=5, pady=5, columnspan=2)
         
-        # 添加防重复粘贴时间间隔设置
-        ttk.Label(format_frame, text="Duplicate Protection (s):").grid(row=1, column=0, sticky=tk.W, padx=5, pady=5)
-        self.duplicate_time_var = tk.StringVar(value="3")  # 默认3秒
+        # 紧凑排列说明
+        ttk.Label(format_frame, text="Duplicate Protection (s):").grid(row=1, column=0, sticky=tk.W, padx=5, pady=2)
+        self.duplicate_time_var = tk.StringVar(value="3")
         duplicate_entry = ttk.Spinbox(format_frame, from_=1, to=10, width=5, textvariable=self.duplicate_time_var)
-        duplicate_entry.grid(row=1, column=1, sticky=tk.W, padx=5, pady=5)
-        ttk.Label(format_frame, text="Prevention of duplicate pasting within the specified seconds", 
-                  font=("Arial", 8)).grid(row=1, column=2, sticky=tk.W, padx=5, pady=5)
+        duplicate_entry.grid(row=1, column=1, sticky=tk.W, padx=2, pady=2)
+        ttk.Label(format_frame, text="(No duplicate paste in seconds)", font=("Arial", 8)).grid(row=1, column=2, sticky=tk.W, padx=2, pady=2)
         
-        # 在format_frame中添加提醒时间设置
-        ttk.Label(format_frame, text="Reminder Time (s):").grid(row=3, column=0, sticky=tk.W, padx=5, pady=5)
+        ttk.Label(format_frame, text="Reminder Time (s):").grid(row=2, column=0, sticky=tk.W, padx=5, pady=2)
         self.reminder_time_var = tk.StringVar(value=str(self.reminder_time))
         reminder_entry = ttk.Spinbox(format_frame, from_=5, to=300, width=5, textvariable=self.reminder_time_var)
-        reminder_entry.grid(row=3, column=1, sticky=tk.W, padx=5, pady=5)
-        ttk.Label(format_frame, text="Show reminder if no activity after paste", 
-                  font=("Arial", 8)).grid(row=3, column=2, sticky=tk.W, padx=5, pady=5)
+        reminder_entry.grid(row=2, column=1, sticky=tk.W, padx=2, pady=2)
+        ttk.Label(format_frame, text="(Show reminder if no activity)", font=("Arial", 8)).grid(row=2, column=2, sticky=tk.W, padx=2, pady=2)
+        
+        ttk.Label(format_frame, text="Row Skip Count:").grid(row=3, column=0, sticky=tk.W, padx=5, pady=2)
+        self.row_skip_var = tk.StringVar(value=str(self.row_skip_count))
+        row_skip_entry = ttk.Spinbox(format_frame, from_=1, to=100, width=5, textvariable=self.row_skip_var)
+        row_skip_entry.grid(row=3, column=1, sticky=tk.W, padx=2, pady=2)
+        ttk.Label(format_frame, text="(Rows to skip when auto moving)", font=("Arial", 8)).grid(row=3, column=2, sticky=tk.W, padx=2, pady=2)
         
         # 匹配状态显示
-        ttk.Label(format_frame, text="Match Status:").grid(row=2, column=0, sticky=tk.W, padx=5, pady=5)
+        ttk.Label(format_frame, text="Match Status:").grid(row=4, column=0, sticky=tk.W, padx=5, pady=5)
         self.match_status_label = ttk.Label(format_frame, text="Not checked")
-        self.match_status_label.grid(row=2, column=1, sticky=tk.W, padx=5, pady=5)
+        self.match_status_label.grid(row=4, column=1, sticky=tk.W, padx=5, pady=5)
         
         # 日志区域
         log_frame = ttk.LabelFrame(main_frame, text="Log", padding="10")
@@ -350,15 +346,21 @@ class AutoCopyApp:
                 current_row = current_cell.Row
                 current_column = current_cell.Column
                 
-                # 移动到下一行，保持列不变
-                next_cell = self.excel_app.ActiveSheet.Cells(current_row + 1, current_column)
+                # 获取要跳过的行数
+                try:
+                    skip_rows = int(self.row_skip_var.get())
+                except (ValueError, AttributeError):
+                    skip_rows = self.row_skip_count
+                
+                # 移动到指定行数后的单元格，保持列不变
+                next_cell = self.excel_app.ActiveSheet.Cells(current_row + skip_rows, current_column)
                 next_cell.Select()
                 
                 # 更新当前单元格显示
                 self.refresh_current_cell()
                 
                 # 记录日志
-                self.log(f"Automatically moved to next row: {next_cell.Address}")
+                self.log(f"Automatically moved {skip_rows} rows down: {next_cell.Address}")
             except Exception as e:
                 self.log(f"Error moving to next row: {str(e)}")
         
@@ -886,10 +888,11 @@ def main():
         app = AutoCopyApp(root)
         # 设置图标
         try:
-            # 如果有图标文件可以使用
             root.iconbitmap("clipboard.ico")
         except:
             pass
+        root.geometry("700x900")  # 启动时更大，确保所有控件显示
+        root.minsize(600, 800)
         root.mainloop()
     except Exception as e:
         messagebox.showerror("Application Error", f"An error occurred: {str(e)}")
