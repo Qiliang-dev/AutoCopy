@@ -26,6 +26,11 @@ class AutoCopyApp:
         self.last_pasted_content = ""  # 上次粘贴的内容
         self.last_paste_time = 0  # 上次粘贴的时间戳
         self.auto_move_next = False  # 新增：是否自动移动到下一行
+        self.reminder_time = 20  # 新增：提醒等待时间（秒）
+        self.reminder_timer = None  # 新增：提醒定时器
+        self.reminder_dialog = None  # 新增：提醒对话框
+        self.last_activity_time = 0  # 新增：最后活动时间
+        self.activity_monitor_active = False  # 新增：活动监控状态
         
         self.root = root
         self.root.title("AutoCopy Tool")
@@ -131,6 +136,14 @@ class AutoCopyApp:
         duplicate_entry.grid(row=1, column=1, sticky=tk.W, padx=5, pady=5)
         ttk.Label(format_frame, text="Prevention of duplicate pasting within the specified seconds", 
                   font=("Arial", 8)).grid(row=1, column=2, sticky=tk.W, padx=5, pady=5)
+        
+        # 在format_frame中添加提醒时间设置
+        ttk.Label(format_frame, text="Reminder Time (s):").grid(row=3, column=0, sticky=tk.W, padx=5, pady=5)
+        self.reminder_time_var = tk.StringVar(value=str(self.reminder_time))
+        reminder_entry = ttk.Spinbox(format_frame, from_=5, to=300, width=5, textvariable=self.reminder_time_var)
+        reminder_entry.grid(row=3, column=1, sticky=tk.W, padx=5, pady=5)
+        ttk.Label(format_frame, text="Show reminder if no activity after paste", 
+                  font=("Arial", 8)).grid(row=3, column=2, sticky=tk.W, padx=5, pady=5)
         
         # 匹配状态显示
         ttk.Label(format_frame, text="Match Status:").grid(row=2, column=0, sticky=tk.W, padx=5, pady=5)
@@ -348,6 +361,9 @@ class AutoCopyApp:
                 self.log(f"Automatically moved to next row: {next_cell.Address}")
             except Exception as e:
                 self.log(f"Error moving to next row: {str(e)}")
+        
+        # 启动活动监控
+        self.start_activity_monitoring()
     
     def show_error_notification(self, error_message):
         """显示错误通知"""
@@ -398,6 +414,9 @@ class AutoCopyApp:
         
         # 自动关闭通知的倒计时
         self._start_notification_timer(5)  # 5秒后自动关闭
+        
+        # 启动活动监控
+        self.start_activity_monitoring()
     
     def _start_notification_timer(self, seconds):
         """启动通知自动关闭倒计时"""
@@ -704,6 +723,9 @@ class AutoCopyApp:
     def on_closing(self):
         """关闭窗口处理"""
         try:
+            # 停止活动监控
+            self.stop_activity_monitoring()
+            
             # 尝试解绑所有全局快捷键
             for key in ("<Return>", "<KP_Enter>", "<Escape>"):
                 try:
@@ -754,6 +776,109 @@ class AutoCopyApp:
         button_text = "Auto Move Next: ON" if self.auto_move_next else "Auto Move Next: OFF"
         self.auto_move_button.config(text=button_text)
         self.log(f"Auto move to next row: {'Enabled' if self.auto_move_next else 'Disabled'}")
+
+    def start_activity_monitoring(self):
+        """开始监控用户活动"""
+        self.activity_monitor_active = True
+        self.last_activity_time = time.time()
+        
+        # 绑定鼠标和键盘事件
+        self.root.bind_all("<Motion>", self.on_activity)
+        self.root.bind_all("<Key>", self.on_activity)
+        self.root.bind_all("<Button>", self.on_activity)
+        
+        # 启动活动监控
+        self.monitor_activity()
+    
+    def stop_activity_monitoring(self):
+        """停止监控用户活动"""
+        self.activity_monitor_active = False
+        # 解绑事件
+        self.root.unbind_all("<Motion>")
+        self.root.unbind_all("<Key>")
+        self.root.unbind_all("<Button>")
+        # 取消定时器
+        if self.reminder_timer:
+            self.root.after_cancel(self.reminder_timer)
+            self.reminder_timer = None
+    
+    def on_activity(self, event=None):
+        """处理用户活动"""
+        self.last_activity_time = time.time()
+        # 如果提醒窗口存在，关闭它
+        if self.reminder_dialog and self.reminder_dialog.winfo_exists():
+            self.reminder_dialog.destroy()
+            self.reminder_dialog = None
+        # 停止活动监控
+        self.stop_activity_monitoring()
+    
+    def monitor_activity(self):
+        """监控用户活动"""
+        if not self.activity_monitor_active:
+            return
+            
+        current_time = time.time()
+        time_since_last_activity = current_time - self.last_activity_time
+        
+        try:
+            reminder_time = int(self.reminder_time_var.get())
+        except (ValueError, AttributeError):
+            reminder_time = self.reminder_time
+            
+        if time_since_last_activity >= reminder_time:
+            self.show_reminder_dialog()
+            # 显示提醒后停止监控
+            self.stop_activity_monitoring()
+        else:
+            # 继续监控
+            self.reminder_timer = self.root.after(1000, self.monitor_activity)
+    
+    def show_reminder_dialog(self):
+        """显示提醒对话框"""
+        if self.reminder_dialog and self.reminder_dialog.winfo_exists():
+            return
+            
+        # 创建提醒窗口
+        self.reminder_dialog = tk.Toplevel(self.root)
+        self.reminder_dialog.title("Activity Reminder")
+        self.reminder_dialog.attributes('-topmost', True)
+        
+        # 设置窗口大小和位置 - 更大的窗口
+        window_width = 1200
+        window_height = 800
+        screen_width = self.root.winfo_screenwidth()
+        screen_height = self.root.winfo_screenheight()
+        x = (screen_width - window_width) // 2
+        y = (screen_height - window_height) // 2
+        self.reminder_dialog.geometry(f"{window_width}x{window_height}+{x}+{y}")
+        
+        # 设置红色背景
+        self.reminder_dialog.configure(bg="#FFE4E1")  # 浅红色背景
+        
+        # 添加提醒内容 - 使用tk.Frame而不是ttk.Frame
+        frame = tk.Frame(self.reminder_dialog, bg="#FFE4E1", padx=30, pady=30)
+        frame.pack(fill=tk.BOTH, expand=True)
+        
+        # 警告图标 - 更大
+        warning_label = tk.Label(frame, text="⚠️", font=("Arial", 72), bg="#FFE4E1")
+        warning_label.pack(pady=(0, 20))
+        
+        # 提醒文本 - 英文，更大字体
+        message = "NO ACTIVITY DETECTED!\n\nPlease continue your work or close this window."
+        text_label = tk.Label(frame, text=message, font=("Arial", 16, "bold"), 
+                            justify=tk.CENTER, bg="#FFE4E1", fg="#8B0000")  # 深红色文字
+        text_label.pack(pady=20)
+        
+        # 添加关闭按钮 - 更大
+        close_button = tk.Button(frame, text="CLOSE", command=self.reminder_dialog.destroy,
+                               font=("Arial", 12, "bold"), bg="#FF6B6B", fg="white",
+                               relief=tk.RAISED, padx=20, pady=10)
+        close_button.pack(pady=20)
+        
+        # 绑定活动事件到提醒窗口 - 任何用户活动都会关闭窗口
+        self.reminder_dialog.bind("<Motion>", lambda e: self.reminder_dialog.destroy())
+        self.reminder_dialog.bind("<Key>", lambda e: self.reminder_dialog.destroy())
+        self.reminder_dialog.bind("<Button>", lambda e: self.reminder_dialog.destroy())
 
 def main():
     try:
