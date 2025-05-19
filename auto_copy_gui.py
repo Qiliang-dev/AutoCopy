@@ -8,6 +8,8 @@ import threading
 import win32com.client
 import pythoncom
 import traceback
+import winsound
+import ctypes
 
 class AutoCopyApp:
     def __init__(self, root):
@@ -807,12 +809,19 @@ class AutoCopyApp:
     def on_activity(self, event=None):
         """处理用户活动"""
         self.last_activity_time = time.time()
-        # 如果提醒窗口存在，关闭它
+        # 停止活动监控和弹窗定时器
+        self.stop_activity_monitoring()
+        # 关闭弹窗（如果存在）
         if self.reminder_dialog and self.reminder_dialog.winfo_exists():
             self.reminder_dialog.destroy()
             self.reminder_dialog = None
-        # 停止活动监控
-        self.stop_activity_monitoring()
+        
+        if hasattr(self, '_reminder_flash_job') and self._reminder_flash_job:
+            try:
+                self.reminder_dialog.after_cancel(self._reminder_flash_job)
+            except:
+                pass
+            self._reminder_flash_job = None
     
     def monitor_activity(self):
         """监控用户活动"""
@@ -836,16 +845,12 @@ class AutoCopyApp:
             self.reminder_timer = self.root.after(1000, self.monitor_activity)
     
     def show_reminder_dialog(self):
-        """显示提醒对话框"""
         if self.reminder_dialog and self.reminder_dialog.winfo_exists():
             return
-            
-        # 创建提醒窗口
+
         self.reminder_dialog = tk.Toplevel(self.root)
         self.reminder_dialog.title("Activity Reminder")
         self.reminder_dialog.attributes('-topmost', True)
-        
-        # 设置窗口大小和位置 - 更大的窗口
         window_width = 1200
         window_height = 800
         screen_width = self.root.winfo_screenwidth()
@@ -853,34 +858,52 @@ class AutoCopyApp:
         x = (screen_width - window_width) // 2
         y = (screen_height - window_height) // 2
         self.reminder_dialog.geometry(f"{window_width}x{window_height}+{x}+{y}")
-        
-        # 设置红色背景
-        self.reminder_dialog.configure(bg="#FFE4E1")  # 浅红色背景
-        
-        # 添加提醒内容 - 使用tk.Frame而不是ttk.Frame
-        frame = tk.Frame(self.reminder_dialog, bg="#FFE4E1", padx=30, pady=30)
+
+        # 初始背景色
+        self._reminder_bg_colors = ["#FFE4E1", "#FF0000"]
+        self._reminder_bg_index = 0
+        self._reminder_flash_job = None
+
+        self.reminder_dialog.configure(bg=self._reminder_bg_colors[self._reminder_bg_index])
+
+        frame = tk.Frame(self.reminder_dialog, bg=self._reminder_bg_colors[self._reminder_bg_index], padx=30, pady=30)
         frame.pack(fill=tk.BOTH, expand=True)
-        
-        # 警告图标 - 更大
-        warning_label = tk.Label(frame, text="⚠️", font=("Arial", 72), bg="#FFE4E1")
+
+        warning_label = tk.Label(frame, text="⚠️", font=("Arial", 72), bg=self._reminder_bg_colors[self._reminder_bg_index])
         warning_label.pack(pady=(0, 20))
-        
-        # 提醒文本 - 英文，更大字体
+
         message = "NO ACTIVITY DETECTED!\n\nPlease continue your work or close this window."
-        text_label = tk.Label(frame, text=message, font=("Arial", 16, "bold"), 
-                            justify=tk.CENTER, bg="#FFE4E1", fg="#8B0000")  # 深红色文字
+        text_label = tk.Label(frame, text=message, font=("Arial", 16, "bold"),
+                              justify=tk.CENTER, bg=self._reminder_bg_colors[self._reminder_bg_index], fg="#8B0000")
         text_label.pack(pady=20)
-        
-        # 添加关闭按钮 - 更大
+
         close_button = tk.Button(frame, text="CLOSE", command=self.reminder_dialog.destroy,
-                               font=("Arial", 12, "bold"), bg="#FF6B6B", fg="white",
-                               relief=tk.RAISED, padx=20, pady=10)
+                                 font=("Arial", 12, "bold"), bg="#FF6B6B", fg="white",
+                                 relief=tk.RAISED, padx=20, pady=10)
         close_button.pack(pady=20)
-        
-        # 绑定活动事件到提醒窗口 - 任何用户活动都会关闭窗口
+
+        # 绑定活动事件到弹窗
         self.reminder_dialog.bind("<Motion>", lambda e: self.reminder_dialog.destroy())
         self.reminder_dialog.bind("<Key>", lambda e: self.reminder_dialog.destroy())
         self.reminder_dialog.bind("<Button>", lambda e: self.reminder_dialog.destroy())
+
+        # 启动闪烁
+        self._reminder_flash_bg()
+
+    def _reminder_flash_bg(self):
+        if not (self.reminder_dialog and self.reminder_dialog.winfo_exists()):
+            return
+        self._reminder_bg_index = 1 - self._reminder_bg_index
+        color = self._reminder_bg_colors[self._reminder_bg_index]
+        self.reminder_dialog.configure(bg=color)
+        for child in self.reminder_dialog.winfo_children():
+            try:
+                child.configure(bg=color)
+                for subchild in child.winfo_children():
+                    subchild.configure(bg=color)
+            except:
+                pass
+        self._reminder_flash_job = self.reminder_dialog.after(500, self._reminder_flash_bg)
 
 def main():
     try:
