@@ -10,6 +10,11 @@ import pythoncom
 import traceback
 import winsound
 import ctypes
+import win32api
+import win32con
+from ctypes import windll
+from ctypes import wintypes
+import requests
 
 class AutoCopyApp:
     def __init__(self, root):
@@ -34,6 +39,11 @@ class AutoCopyApp:
         self.reminder_dialog = None  # 新增：提醒对话框
         self.last_activity_time = 0  # 新增：最后活动时间
         self.activity_monitor_active = False  # 新增：活动监控状态
+        self.global_hook_thread = None  # 新增：全局钩子线程
+        self.activity_detected = False  # 新增：活动检测标志
+        self.last_mouse_pos = None  # 新增：上次鼠标位置
+        self.phone_notification_enabled = True  # 新增：手机通知开关，默认开启
+        self.last_successful_paste_content = ""  # 新增：上次成功粘贴的内容
         
         self.root = root
         self.root.title("AutoCopy Tool")
@@ -105,6 +115,9 @@ class AutoCopyApp:
         self.exit_button.grid(row=1, column=0, padx=5, pady=5, sticky=tk.W)
         self.auto_move_button = ttk.Button(control_frame, text="Auto Move Next: OFF", command=self.toggle_auto_move)
         self.auto_move_button.grid(row=1, column=1, padx=5, pady=5, sticky=tk.W)
+        # 添加手机提醒测试按钮
+        self.test_phone_button = ttk.Button(control_frame, text="Test Phone Alert", command=self.test_phone_alert)
+        self.test_phone_button.grid(row=1, column=2, padx=5, pady=5, sticky=tk.W)
         
         # 剪贴板内容显示区域
         clipboard_frame = ttk.LabelFrame(main_frame, text="Current Clipboard Content", padding="10")
@@ -143,10 +156,21 @@ class AutoCopyApp:
         row_skip_entry.grid(row=3, column=1, sticky=tk.W, padx=2, pady=2)
         ttk.Label(format_frame, text="(Rows to skip when auto moving)", font=("Arial", 8)).grid(row=3, column=2, sticky=tk.W, padx=2, pady=2)
         
+        # 手机通知设置
+        ttk.Label(format_frame, text="Phone Notification:").grid(row=4, column=0, sticky=tk.W, padx=5, pady=2)
+        self.phone_notify_button = ttk.Button(format_frame, text="Phone Alert: ON", 
+                                             command=self.toggle_phone_notification)
+        self.phone_notify_button.grid(row=4, column=1, sticky=tk.W, padx=2, pady=2)
+        
+        self.ntfy_topic_var = tk.StringVar(value="autocopy_CPD")
+        topic_entry = ttk.Entry(format_frame, textvariable=self.ntfy_topic_var, width=20)
+        topic_entry.grid(row=4, column=2, sticky=tk.W, padx=2, pady=2)
+        ttk.Label(format_frame, text="(ntfy topic name)", font=("Arial", 8)).grid(row=4, column=3, sticky=tk.W, padx=2, pady=2)
+        
         # 匹配状态显示
-        ttk.Label(format_frame, text="Match Status:").grid(row=4, column=0, sticky=tk.W, padx=5, pady=5)
+        ttk.Label(format_frame, text="Match Status:").grid(row=5, column=0, sticky=tk.W, padx=5, pady=5)
         self.match_status_label = ttk.Label(format_frame, text="Not checked")
-        self.match_status_label.grid(row=4, column=1, sticky=tk.W, padx=5, pady=5)
+        self.match_status_label.grid(row=5, column=1, sticky=tk.W, padx=5, pady=5)
         
         # 日志区域
         log_frame = ttk.LabelFrame(main_frame, text="Log", padding="10")
@@ -174,6 +198,12 @@ class AutoCopyApp:
             return False
             
         try:
+            # 确保 COM 已初始化
+            pythoncom.CoInitialize()
+            
+            # 重新获取 Excel 应用程序实例
+            excel = win32com.client.GetActiveObject("Excel.Application")
+            
             # 刷新当前单元格
             self.refresh_current_cell()
             
@@ -181,18 +211,21 @@ class AutoCopyApp:
             content = pyperclip.paste()
             
             # 检查当前单元格是否已有内容
-            current_value = self.excel_app.ActiveCell.Value
+            current_value = excel.ActiveCell.Value
             if current_value:
                 # 如果单元格已有内容，则在现有内容后添加换行和新内容
                 self.log("Cell already has content, appending with new line")
                 # Excel中的换行符是Chr(10)
                 new_value = f"{current_value}{chr(10)}{content}"
-                self.excel_app.ActiveCell.Value = new_value
+                excel.ActiveCell.Value = new_value
                 self.log(f"Content appended to cell {self.current_cell}")
             else:
                 # 单元格为空，直接设置值
-                self.excel_app.ActiveCell.Value = content
+                excel.ActiveCell.Value = content
                 self.log(f"Content set to cell {self.current_cell}")
+            
+            # 记录成功粘贴的内容
+            self.last_successful_paste_content = content
             
             # 更新显示
             self.update_clipboard_display()
@@ -203,6 +236,9 @@ class AutoCopyApp:
             if show_error_dialog:
                 messagebox.showerror("Paste Error", error_msg)
             return False  # 返回失败状态
+        finally:
+            # 清理 COM
+            pythoncom.CoUninitialize()
     
     def update_clipboard_display(self):
         """更新剪贴板内容显示"""
@@ -252,14 +288,23 @@ class AutoCopyApp:
                 if match_result:
                     self.match_status_label.config(text="Matches Pattern", foreground="green")
                     
-                    # 如果正在监控并且匹配成功且不是重复内容，显示通知并自动粘贴
-                    if self.running and not is_duplicate:
+                    # 检查是否与上次成功粘贴的内容相同
+                    is_same_as_last_pasted = hasattr(self, 'last_successful_paste_content') and content == self.last_successful_paste_content
+                    
+
+                    
+                    # 如果正在监控并且匹配成功且不是重复内容且不与上次粘贴内容相同，显示通知并自动粘贴
+                    if self.running and not is_duplicate and not is_same_as_last_pasted:
                         # 保存此次操作数据，用于防止重复
                         self.last_pasted_content = content
                         self.last_paste_time = current_time
                         
                         # 延迟一小段时间后执行粘贴操作，给UI时间更新
                         self.root.after(100, lambda: self.auto_paste_with_notification(content))
+                    elif is_same_as_last_pasted:
+                        self.log(f"Content same as last successful paste, skipping auto-paste")
+                    elif is_duplicate:
+                        self.log(f"Duplicate content detected within time threshold, skipping auto-paste")
                 else:
                     self.match_status_label.config(text="Does Not Match", foreground="red")
             
@@ -284,6 +329,11 @@ class AutoCopyApp:
                 error_msg = "Paste failed. Please check Excel connection."
                 self.log(error_msg)
                 self.show_error_notification(error_msg)
+            
+            # 重置活动监控
+            self.last_activity_time = time.time()
+            # 启动活动监控
+            self.start_activity_monitoring()
                 
         except Exception as e:
             self.log(f"Auto paste error: {str(e)}")
@@ -435,7 +485,21 @@ class AutoCopyApp:
     def schedule_cell_check(self):
         """定期检查Excel单元格"""
         if self.excel_app:
-            self.refresh_current_cell()
+            try:
+                # 确保 COM 已初始化
+                pythoncom.CoInitialize()
+                # 重新获取 Excel 应用程序实例
+                excel = win32com.client.GetActiveObject("Excel.Application")
+                cell_address = excel.ActiveCell.Address
+                if cell_address != self.current_cell:
+                    self.current_cell = cell_address
+                    self.cell_label.config(text=cell_address)
+                    if self.running:
+                        self.log(f"Cell selection changed: {cell_address}")
+            except Exception as e:
+                self.log(f"Error checking cell: {str(e)}")
+            finally:
+                pythoncom.CoUninitialize()
         
         # 每100毫秒检查一次单元格
         self.excel_check_timer = self.root.after(100, self.schedule_cell_check)
@@ -444,7 +508,11 @@ class AutoCopyApp:
         """刷新当前选中的单元格"""
         if self.excel_app:
             try:
-                cell_address = self.excel_app.ActiveCell.Address
+                # 确保 COM 已初始化
+                pythoncom.CoInitialize()
+                # 重新获取 Excel 应用程序实例
+                excel = win32com.client.GetActiveObject("Excel.Application")
+                cell_address = excel.ActiveCell.Address
                 if cell_address != self.current_cell:
                     self.current_cell = cell_address
                     self.cell_label.config(text=cell_address)
@@ -455,6 +523,9 @@ class AutoCopyApp:
             except Exception as e:
                 self.log(f"Error refreshing cell: {str(e)}")
                 return False
+            finally:
+                # 清理 COM
+                pythoncom.CoUninitialize()
         return False
     
     def connect_to_excel(self):
@@ -496,6 +567,8 @@ class AutoCopyApp:
                                  "Failed to connect to Excel. Please make sure Excel is open and try again.")
             traceback.print_exc()
             return False
+        finally:
+            pythoncom.CoUninitialize()
     
     def monitor_excel_cell(self):
         """监控Excel单元格变化 - 此方法现已弃用，使用定时器代替"""
@@ -781,82 +854,198 @@ class AutoCopyApp:
         self.auto_move_button.config(text=button_text)
         self.log(f"Auto move to next row: {'Enabled' if self.auto_move_next else 'Disabled'}")
 
+    def toggle_phone_notification(self):
+        """切换手机通知功能"""
+        self.phone_notification_enabled = not self.phone_notification_enabled
+        button_text = "Phone Alert: ON" if self.phone_notification_enabled else "Phone Alert: OFF"
+        self.phone_notify_button.config(text=button_text)
+        self.log(f"Phone notification: {'Enabled' if self.phone_notification_enabled else 'Disabled'}")
+
+    def send_phone_alert(self):
+        """发送手机震动提醒"""
+        if not self.phone_notification_enabled:
+            return
+            
+        topic = self.ntfy_topic_var.get().strip()
+        if not topic:
+            self.log("Phone alert failed: No topic specified")
+            return
+        
+        def send_async():
+            try:
+                url = f"https://ntfy.sh/{topic}"
+                
+                # 发送3条连续通知以增强震动效果
+                messages = [
+                    ("URGENT: AutoCopy Alert! Please continue working immediately!", "WORK REMINDER"),
+                    ("ATTENTION: Still no activity detected!", "SECOND ALERT"),
+                    ("FINAL WARNING: Resume work now!", "LAST NOTICE")
+                ]
+                
+                success_count = 0
+                for i, (message, title) in enumerate(messages):
+                    response = requests.post(
+                        url, 
+                        data=message,
+                        headers={
+                            "Title": title,
+                            "Priority": "urgent",
+                            "Tags": "warning"
+                        },
+                        timeout=5
+                    )
+                    if response.status_code == 200:
+                        success_count += 1
+                    
+                    # 每条消息间隔0.2秒，更快更密集
+                    if i < len(messages) - 1:
+                        time.sleep(0.2)
+                
+                if success_count > 0:
+                    self.log(f"Phone alert sent successfully ({success_count}/3 messages)")
+                else:
+                    self.log("All phone alerts failed")
+                    
+            except Exception as e:
+                self.log(f"Phone alert failed: {str(e)}")
+        
+        # 异步发送，不阻塞主线程
+        threading.Thread(target=send_async, daemon=True).start()
+
+    def test_phone_alert(self):
+        """测试手机提醒功能"""
+        if not self.phone_notification_enabled:
+            messagebox.showinfo("Info", "Please enable phone notification and set topic name first")
+            return
+            
+        topic = self.ntfy_topic_var.get().strip()
+        if not topic:
+            messagebox.showinfo("Info", "Please set ntfy topic name first")
+            return
+            
+        self.send_phone_alert()
+        self.log("Phone alert test sent")
+
     def start_activity_monitoring(self):
         """开始监控用户活动"""
         self.activity_monitor_active = True
         self.last_activity_time = time.time()
+        self.activity_detected = False
         
-        # 绑定鼠标和键盘事件
-        self.root.bind_all("<Motion>", self.on_activity)
-        self.root.bind_all("<Key>", self.on_activity)
-        self.root.bind_all("<Button>", self.on_activity)
+        # 获取初始鼠标位置
+        cursor = wintypes.POINT()
+        windll.user32.GetCursorPos(ctypes.byref(cursor))
+        self.last_mouse_pos = (cursor.x, cursor.y)
         
-        # 启动活动监控
-        self.monitor_activity()
-    
+        # 启动活动检查定时器
+        self._check_activity()
+
+    def _check_activity(self):
+        """检查活动状态"""
+        if not self.activity_monitor_active:
+            return
+            
+        try:
+            # 检查鼠标位置
+            cursor = wintypes.POINT()
+            windll.user32.GetCursorPos(ctypes.byref(cursor))
+            current_pos = (cursor.x, cursor.y)
+            
+            # 如果鼠标位置发生变化
+            if current_pos != self.last_mouse_pos:
+                self.log("Mouse movement detected")
+                self.activity_detected = True
+                self.last_mouse_pos = current_pos
+            
+            # 检查键盘状态
+            for key in range(0x30, 0x5A):  # 检查常用按键
+                if windll.user32.GetAsyncKeyState(key) & 0x8000:
+                    self.log("Keyboard activity detected")
+                    self.activity_detected = True
+                    break
+            
+            if self.activity_detected:
+                self.log("Activity detected - stopping monitoring")
+                self.stop_activity_monitoring()
+                # 关闭弹窗（如果存在）
+                if self.reminder_dialog and self.reminder_dialog.winfo_exists():
+                    self.reminder_dialog.destroy()
+                    self.reminder_dialog = None
+                return
+                
+            current_time = time.time()
+            time_since_last_activity = current_time - self.last_activity_time
+            
+            try:
+                reminder_time = int(self.reminder_time_var.get())
+            except (ValueError, AttributeError):
+                reminder_time = self.reminder_time
+                
+            if time_since_last_activity >= reminder_time:
+                self.log("No activity detected for specified time - showing reminder")
+                self.show_reminder_dialog()
+                # 显示提醒后停止监控
+                self.stop_activity_monitoring()
+            else:
+                # 继续检查
+                self.root.after(100, self._check_activity)
+                
+        except Exception as e:
+            self.log(f"Activity check error: {str(e)}")
+            # 继续检查
+            self.root.after(100, self._check_activity)
+
     def stop_activity_monitoring(self):
         """停止监控用户活动"""
         self.activity_monitor_active = False
-        # 解绑事件
-        self.root.unbind_all("<Motion>")
-        self.root.unbind_all("<Key>")
-        self.root.unbind_all("<Button>")
+        self.activity_detected = False
         # 取消定时器
         if self.reminder_timer:
             self.root.after_cancel(self.reminder_timer)
             self.reminder_timer = None
-    
-    def on_activity(self, event=None):
-        """处理用户活动"""
-        self.last_activity_time = time.time()
-        # 停止活动监控和弹窗定时器
-        self.stop_activity_monitoring()
-        # 关闭弹窗（如果存在）
-        if self.reminder_dialog and self.reminder_dialog.winfo_exists():
-            self.reminder_dialog.destroy()
-            self.reminder_dialog = None
-        
-        if hasattr(self, '_reminder_flash_job') and self._reminder_flash_job:
-            try:
-                self.reminder_dialog.after_cancel(self._reminder_flash_job)
-            except:
-                pass
-            self._reminder_flash_job = None
-    
-    def monitor_activity(self):
-        """监控用户活动"""
-        if not self.activity_monitor_active:
-            return
-            
-        current_time = time.time()
-        time_since_last_activity = current_time - self.last_activity_time
-        
-        try:
-            reminder_time = int(self.reminder_time_var.get())
-        except (ValueError, AttributeError):
-            reminder_time = self.reminder_time
-            
-        if time_since_last_activity >= reminder_time:
-            self.show_reminder_dialog()
-            # 显示提醒后停止监控
-            self.stop_activity_monitoring()
-        else:
-            # 继续监控
-            self.reminder_timer = self.root.after(1000, self.monitor_activity)
-    
+
     def show_reminder_dialog(self):
         if self.reminder_dialog and self.reminder_dialog.winfo_exists():
             return
 
+        # 发送手机提醒
+        self.send_phone_alert()
+
         self.reminder_dialog = tk.Toplevel(self.root)
         self.reminder_dialog.title("Activity Reminder")
         self.reminder_dialog.attributes('-topmost', True)
+        
+        # 获取所有显示器的信息
+        monitors = []
+        try:
+            def callback(monitor, dc, rect, data):
+                monitors.append({
+                    'left': rect.contents.left,
+                    'top': rect.contents.top,
+                    'right': rect.contents.right,
+                    'bottom': rect.contents.bottom,
+                    'width': rect.contents.right - rect.contents.left,
+                    'height': rect.contents.bottom - rect.contents.top
+                })
+                return 1
+            win32api.EnumDisplayMonitors(None, None, callback, 0)
+        except:
+            # 如果获取显示器信息失败，使用主显示器
+            monitors = [{
+                'left': 0,
+                'top': 0,
+                'width': self.root.winfo_screenwidth(),
+                'height': self.root.winfo_screenheight()
+            }]
+
+        # 选择要显示提醒的显示器（默认使用主显示器）
+        target_monitor = monitors[0]
+        
+        # 设置窗口大小和位置
         window_width = 1200
         window_height = 800
-        screen_width = self.root.winfo_screenwidth()
-        screen_height = self.root.winfo_screenheight()
-        x = (screen_width - window_width) // 2
-        y = (screen_height - window_height) // 2
+        x = target_monitor['left'] + (target_monitor['width'] - window_width) // 2
+        y = target_monitor['top'] + (target_monitor['height'] - window_height) // 2
         self.reminder_dialog.geometry(f"{window_width}x{window_height}+{x}+{y}")
 
         # 初始背景色

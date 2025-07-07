@@ -59,3 +59,6 @@ AutoCopy的配置选项保存在`config/settings.json`文件中，您可以根�
 ## 许可证
 
 本软件遵循MIT许可证。 
+
+## 打包
+pyinstaller --noconsole --onefile -n AutoCopyTool auto_copy_gui.py
