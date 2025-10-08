@@ -1,0 +1,291 @@
+2025-08-26 13:11:52,532 - INFO - Logging system initialized
+2025-08-26 13:11:52,556 - INFO - Settings loaded successfully
+2025-08-26 13:11:52,680 - INFO - Application started. Please connect to Excel and click 'Start Monitoring'
+2025-08-26 13:11:52,682 - INFO - AutoCopy application started successfully
+2025-08-26 13:11:52,687 - INFO - Application started with crash protection and settings persistence
+2025-08-26 13:22:02,811 - INFO - Starting monitoring process
+2025-08-26 13:22:02,811 - WARNING - Excel not connected when starting monitoring
+2025-08-26 13:22:04,206 - INFO - Attempting to connect to Excel
+2025-08-26 13:22:04,271 - INFO - Successfully obtained Excel application object
+2025-08-26 13:22:04,447 - INFO - Connected to Excel. Workbook: test.xlsx, Sheet: Tabelle1
+2025-08-26 13:22:04,447 - INFO - Current cell: $A$1
+2025-08-26 13:22:04,447 - INFO - Excel connection successful - Workbook: test.xlsx, Sheet: Tabelle1, Cell: $A$1
+2025-08-26 13:22:04,447 - INFO - Starting monitoring...
+2025-08-26 13:22:04,447 - INFO - Monitoring started with settings: reminder_time=20, row_skip=1, max_files=None
+2025-08-26 13:22:04,447 - INFO - Target Excel: test.xlsx
+2025-08-26 13:22:04,464 - INFO - Current selected cell: $A$1
+2025-08-26 13:22:04,464 - INFO - Current cell: $A$1
+2025-08-26 13:22:04,464 - INFO - Clipboard monitoring thread started
+2025-08-26 13:22:04,472 - INFO - Auto-paste mode: Content will be pasted automatically when detected
+2025-08-26 13:22:04,513 - INFO - Clipboard monitoring started...
+2025-08-26 13:22:05,525 - INFO - New content detected: 
+2025-08-26 13:22:06,065 - INFO - New content detected: S C:\Users\Qxz4por\Desktop\chi...
+2025-08-26 13:22:11,640 - INFO - New content detected: 2025_02_25_143253_DA00097_A
+2025-08-26 13:22:11,766 - INFO - Content set to cell $A$1
+2025-08-26 13:22:13,307 - INFO - Mouse movement detected
+2025-08-26 13:22:13,308 - INFO - Activity detected - stopping monitoring
+2025-08-26 13:22:17,424 - INFO - Cell already has content, appending with new line
+2025-08-26 13:22:17,482 - INFO - Content appended to cell $A$1
+2025-08-26 13:22:17,673 - INFO - New content detected: 2025_02_25_143307_DA00097_A
+2025-08-26 13:22:17,926 - INFO - Mouse movement detected
+2025-08-26 13:22:17,926 - INFO - Activity detected - stopping monitoring
+2025-08-26 13:22:22,735 - INFO - New content detected: 2025_05_08_104700_LG68384_C
+2025-08-26 13:22:22,947 - INFO - Cell already has content, appending with new line
+2025-08-26 13:22:22,978 - INFO - Content appended to cell $A$1
+2025-08-26 13:22:24,321 - INFO - Mouse movement detected
+2025-08-26 13:22:24,323 - INFO - Activity detected - stopping monitoring
+2025-08-26 13:22:27,793 - INFO - New content detected: 2025_04_26_001715_DA00097_A
+2025-08-26 13:22:27,966 - INFO - Cell already has content, appending with new line
+2025-08-26 13:22:28,003 - INFO - Content appended to cell $A$1
+2025-08-26 13:22:28,967 - INFO - Mouse movement detected
+2025-08-26 13:22:28,967 - INFO - Activity detected - stopping monitoring
+2025-08-26 13:22:35,691 - INFO - Paste blocked: Cell has 4 files, limit is 4
+2025-08-26 13:22:35,692 - INFO - Paste failed. Please check Excel connection.
+2025-08-26 13:22:35,852 - INFO - New content detected: 2025_04_26_001709_DA00097_A
+2025-08-26 13:22:38,282 - INFO - Mouse movement detected
+2025-08-26 13:22:38,282 - INFO - Activity detected - stopping monitoring
+2025-08-26 13:22:46,264 - INFO - Auto move to next row: Enabled
+2025-08-26 13:23:14,131 - INFO - New content detected: 2025_04_25_235437_DA00097_A
+2025-08-26 13:23:14,331 - INFO - Content set to cell $A$1
+2025-08-26 13:23:14,355 - INFO - Cell not full (1/2 valid files), staying in current cell
+2025-08-26 13:23:14,918 - INFO - Mouse movement detected
+2025-08-26 13:23:14,920 - INFO - Activity detected - stopping monitoring
+2025-08-26 13:23:17,703 - INFO - New content detected: 2025_04_25_233905_DA00097_A
+2025-08-26 13:23:17,941 - INFO - Cell already has content, appending with new line
+2025-08-26 13:23:17,972 - INFO - Content appended to cell $A$1
+2025-08-26 13:23:18,004 - INFO - Cell is full (2/2 valid files), moving to next row
+2025-08-26 13:23:18,145 - INFO - Cell selection changed: $A$2
+2025-08-26 13:23:18,154 - INFO - Automatically moved 1 rows down: $A$2
+2025-08-26 13:23:18,584 - INFO - Mouse movement detected
+2025-08-26 13:23:18,584 - INFO - Activity detected - stopping monitoring
+2025-08-26 13:23:22,273 - INFO - New content detected: 2025_04_25_233837_DA00097_A
+2025-08-26 13:23:22,352 - INFO - Content set to cell $A$2
+2025-08-26 13:23:22,383 - INFO - Cell not full (1/2 valid files), staying in current cell
+2025-08-26 13:23:23,406 - INFO - Mouse movement detected
+2025-08-26 13:23:23,406 - INFO - Activity detected - stopping monitoring
+2025-08-26 13:23:25,207 - INFO - Cell selection changed: $C$1
+2025-08-26 13:23:26,455 - INFO - Cell selection changed: $A$1
+2025-08-26 13:23:35,349 - INFO - New content detected: 2025_04_25_232336_DA00097_A
+2025-08-26 13:23:35,510 - INFO - Paste blocked: Cell has 2 files, limit is 2
+2025-08-26 13:23:35,515 - INFO - Paste failed. Please check Excel connection.
+2025-08-26 13:23:36,251 - INFO - Mouse movement detected
+2025-08-26 13:23:36,251 - INFO - Activity detected - stopping monitoring
+2025-08-26 13:24:24,329 - INFO - Cell selection changed: $A$2
+2025-08-26 13:24:28,016 - INFO - Cell already has content, appending with new line
+2025-08-26 13:24:28,079 - INFO - Content appended to cell $A$2
+2025-08-26 13:24:28,103 - INFO - Cell is full (2/2 valid files), moving to next row
+2025-08-26 13:24:28,174 - INFO - Cell selection changed: $A$3
+2025-08-26 13:24:28,183 - INFO - Automatically moved 1 rows down: $A$3
+2025-08-26 13:24:28,234 - INFO - New content detected: 2025_04_25_230859_DA00097_A
+2025-08-26 13:24:28,994 - INFO - Mouse movement detected
+2025-08-26 13:24:28,994 - INFO - Activity detected - stopping monitoring
+2025-08-26 13:24:30,734 - INFO - Cell selection changed: $B$7
+2025-08-26 13:24:34,658 - INFO - Cell selection changed: $D$2
+2025-08-26 13:24:40,106 - INFO - Cell selection changed: $A$1
+2025-08-26 13:24:42,337 - INFO - New content detected: "2025_04_25_235437_DA00097_A
+2...
+2025-08-26 13:24:45,277 - INFO - Cell selection changed: $B$1
+2025-08-26 13:24:45,420 - INFO - New content detected: 
+2025-08-26 13:24:45,965 - INFO - New content detected: "2025_04_25_235437_DA00097_A
+2...
+2025-08-26 13:24:46,278 - INFO - Error checking cell: (-2147418111, 'Aufruf wurde durch Aufgerufenen abgelehnt.', None, None)
+2025-08-26 13:24:46,328 - INFO - Error refreshing cell: (-2147418111, 'Aufruf wurde durch Aufgerufenen abgelehnt.', None, None)
+2025-08-26 13:24:46,431 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:24:46,541 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:24:46,651 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:24:46,825 - INFO - Cell selection changed: $C$1
+2025-08-26 13:24:46,863 - INFO - New content detected: 
+2025-08-26 13:24:49,860 - INFO - Error checking cell: (-2147418111, 'Aufruf wurde durch Aufgerufenen abgelehnt.', None, None)
+2025-08-26 13:24:50,005 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:24:50,115 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:24:50,225 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:24:50,335 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:24:50,464 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:24:50,571 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:24:50,681 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:24:51,664 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:24:51,774 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:24:51,903 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:24:52,118 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:24:52,225 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:24:52,331 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:24:52,442 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:24:52,473 - INFO - New content detected: 2025_04_25_235437_DA00097_A
+2...
+2025-08-26 13:24:52,507 - INFO - Error refreshing cell: Excel.Application.ActiveCell
+2025-08-26 13:24:52,558 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:24:52,612 - INFO - Error refreshing cell: Excel.Application.ActiveCell
+2025-08-26 13:24:52,620 - ERROR - Error checking cell file limit: Excel.Application.ActiveCell
+2025-08-26 13:24:52,624 - INFO - Failed to paste: Excel.Application.ActiveCell
+2025-08-26 13:24:52,624 - ERROR - Paste error: Excel.Application.ActiveCell
+2025-08-26 13:24:52,628 - INFO - Paste failed. Please check Excel connection.
+2025-08-26 13:24:52,665 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:24:52,775 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:24:52,884 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:24:53,000 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:24:53,106 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:24:53,216 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:24:53,299 - INFO - Mouse movement detected
+2025-08-26 13:24:53,299 - INFO - Activity detected - stopping monitoring
+2025-08-26 13:24:53,331 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:24:53,441 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:24:53,555 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:24:53,664 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:24:53,772 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:24:53,887 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:24:53,994 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:24:54,107 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:24:54,216 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:24:54,321 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:24:54,441 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:24:54,550 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:24:54,662 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:24:54,773 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:24:54,882 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:24:55,001 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:24:55,104 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:24:55,216 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:24:55,327 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:24:55,437 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:24:55,550 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:24:55,659 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:24:55,774 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:24:55,920 - INFO - Cell selection changed: $B$2
+2025-08-26 13:24:57,718 - INFO - Cell selection changed: $E$2
+2025-08-26 13:24:58,517 - INFO - Cell selection changed: $B$2
+2025-08-26 13:24:59,790 - INFO - Cell selection changed: $F$2
+2025-08-26 13:25:00,427 - INFO - Cell selection changed: $B$2
+2025-08-26 13:25:01,767 - INFO - Cell selection changed: $F$2
+2025-08-26 13:25:02,405 - INFO - Cell selection changed: $B$2
+2025-08-26 13:25:03,751 - INFO - Cell selection changed: $B$3
+2025-08-26 13:25:04,547 - INFO - Cell selection changed: $B$2
+2025-08-26 13:25:08,584 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:25:08,693 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:25:08,805 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:25:08,918 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:25:09,030 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:25:09,246 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:25:09,365 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:25:09,490 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:25:09,739 - INFO - Cell selection changed: $C$6
+2025-08-26 13:25:10,047 - INFO - Cell selection changed: $B$3
+2025-08-26 13:25:12,121 - INFO - Cell selection changed: $A$7
+2025-08-26 13:25:13,241 - INFO - Cell selection changed: $A$1
+2025-08-26 13:25:14,640 - INFO - New content detected: "2025_04_25_235437_DA00097_A
+2...
+2025-08-26 13:25:15,710 - INFO - Cell selection changed: $A$3
+2025-08-26 13:25:17,175 - INFO - Cell selection changed: $C$2
+2025-08-26 13:25:17,570 - INFO - Cell selection changed: $A$2
+2025-08-26 13:25:18,286 - INFO - New content detected: "2025_04_25_233837_DA00097_A
+2...
+2025-08-26 13:25:19,501 - INFO - Cell selection changed: $A$4
+2025-08-26 13:25:20,544 - INFO - Cell selection changed: $D$3
+2025-08-26 13:25:21,093 - INFO - Cell selection changed: $A$3
+2025-08-26 13:25:22,024 - INFO - New content detected: 
+2025-08-26 13:25:22,641 - INFO - Cell selection changed: $A$4
+2025-08-26 13:25:28,085 - INFO - Cell selection changed: $A$2
+2025-08-26 13:25:29,354 - INFO - Error checking cell: <unknown>.Address
+2025-08-26 13:25:29,499 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:25:29,601 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:25:29,710 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:25:29,820 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:25:29,929 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:25:30,048 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:25:30,159 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:25:31,298 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:25:31,432 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:25:31,548 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:25:31,756 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:25:31,867 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:25:31,984 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:25:32,090 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:25:32,107 - INFO - New content detected: 2025_04_25_233837_DA00097_A
+2...
+2025-08-26 13:25:32,139 - INFO - Error refreshing cell: Excel.Application.ActiveCell
+2025-08-26 13:25:32,200 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:25:32,231 - INFO - Error refreshing cell: Excel.Application.ActiveCell
+2025-08-26 13:25:32,235 - ERROR - Error checking cell file limit: Excel.Application.ActiveCell
+2025-08-26 13:25:32,238 - INFO - Failed to paste: Excel.Application.ActiveCell
+2025-08-26 13:25:32,238 - ERROR - Paste error: Excel.Application.ActiveCell
+2025-08-26 13:25:32,241 - INFO - Paste failed. Please check Excel connection.
+2025-08-26 13:25:32,315 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:25:32,429 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:25:32,537 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:25:32,648 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:25:32,758 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:25:32,870 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:25:32,981 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:25:33,095 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:25:33,207 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:25:33,316 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:25:33,338 - INFO - Mouse movement detected
+2025-08-26 13:25:33,338 - INFO - Activity detected - stopping monitoring
+2025-08-26 13:25:33,425 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:25:33,541 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:25:33,647 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:25:33,760 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:25:33,871 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:25:33,980 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:25:34,093 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:25:34,208 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:25:34,313 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:25:34,426 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:25:34,541 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:25:34,650 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:25:34,759 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:25:34,892 - INFO - Cell selection changed: $A$3
+2025-08-26 13:25:45,555 - INFO - Cell selection changed: $A$7
+2025-08-26 13:25:46,577 - INFO - Cell selection changed: $A$3
+2025-08-26 13:25:53,151 - INFO - Error checking cell: (-2147418111, 'Aufruf wurde durch Aufgerufenen abgelehnt.', None, None)
+2025-08-26 13:25:53,263 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:25:53,374 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:25:53,484 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:25:53,594 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:25:53,705 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:25:53,827 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:25:53,934 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:25:54,044 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:25:54,154 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:25:54,267 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:25:54,378 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:25:54,490 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:25:54,598 - INFO - Error checking cell: Excel.Application.ActiveCell
+2025-08-26 13:25:54,949 - INFO - Error checking cell: 'NoneType' object has no attribute 'Address'
+2025-08-26 13:25:55,060 - INFO - Error checking cell: 'NoneType' object has no attribute 'Address'
+2025-08-26 13:25:55,192 - INFO - Error checking cell: 'NoneType' object has no attribute 'Address'
+2025-08-26 13:25:55,300 - INFO - Error checking cell: 'NoneType' object has no attribute 'Address'
+2025-08-26 13:25:55,410 - INFO - Error checking cell: 'NoneType' object has no attribute 'Address'
+2025-08-26 13:25:55,526 - INFO - Error checking cell: 'NoneType' object has no attribute 'Address'
+2025-08-26 13:25:55,630 - INFO - Error checking cell: 'NoneType' object has no attribute 'Address'
+2025-08-26 13:25:55,742 - INFO - Error checking cell: 'NoneType' object has no attribute 'Address'
+2025-08-26 13:25:55,868 - INFO - Error checking cell: 'NoneType' object has no attribute 'Address'
+2025-08-26 13:25:55,979 - INFO - Error checking cell: 'NoneType' object has no attribute 'Address'
+2025-08-26 13:25:56,096 - INFO - Error checking cell: 'NoneType' object has no attribute 'Address'
+2025-08-26 13:25:56,228 - INFO - Error checking cell: 'NoneType' object has no attribute 'Address'
+2025-08-26 13:25:56,353 - INFO - Error checking cell: 'NoneType' object has no attribute 'Address'
+2025-08-26 13:25:56,454 - INFO - Error checking cell: 'NoneType' object has no attribute 'Address'
+2025-08-26 13:25:56,576 - INFO - Error checking cell: 'NoneType' object has no attribute 'Address'
+2025-08-26 13:25:56,702 - INFO - Error checking cell: 'NoneType' object has no attribute 'Address'
+2025-08-26 13:25:56,812 - INFO - Error checking cell: 'NoneType' object has no attribute 'Address'
+2025-08-26 13:25:56,930 - INFO - Error checking cell: 'NoneType' object has no attribute 'Address'
+2025-08-26 13:25:57,049 - INFO - Error checking cell: 'NoneType' object has no attribute 'Address'
+2025-08-26 13:25:57,151 - INFO - Error checking cell: 'NoneType' object has no attribute 'Address'
+2025-08-26 13:25:57,261 - INFO - Error checking cell: 'NoneType' object has no attribute 'Address'
+2025-08-26 13:25:57,371 - INFO - Error checking cell: 'NoneType' object has no attribute 'Address'
+2025-08-26 13:25:57,515 - INFO - Error checking cell: 'NoneType' object has no attribute 'Address'
+2025-08-26 13:25:57,656 - INFO - Error checking cell: 'NoneType' object has no attribute 'Address'
+2025-08-26 13:25:57,769 - INFO - Error checking cell: 'NoneType' object has no attribute 'Address'
+2025-08-26 13:25:57,899 - INFO - Error checking cell: 'NoneType' object has no attribute 'Address'
+2025-08-26 13:25:58,113 - INFO - Settings saved successfully
+2025-08-26 13:25:58,119 - INFO - Settings saved on exit
+2025-08-26 13:25:58,143 - INFO - Error checking cell: 'NoneType' object has no attribute 'Address'
+2025-08-26 13:25:58,257 - INFO - Error checking cell: 'NoneType' object has no attribute 'Address'
+2025-08-26 13:25:58,386 - INFO - Error checking cell: 'NoneType' object has no attribute 'Address'
+2025-08-26 13:25:58,504 - INFO - Error checking cell: 'NoneType' object has no attribute 'Address'
+2025-08-26 13:25:58,626 - INFO - Error checking cell: 'NoneType' object has no attribute 'Address'
+2025-08-26 13:25:58,734 - INFO - Error checking cell: 'NoneType' object has no attribute 'Address'
+2025-08-26 13:25:58,863 - INFO - Error checking cell: 'NoneType' object has no attribute 'Address'
+2025-08-26 13:25:58,981 - INFO - Error checking cell: 'NoneType' object has no attribute 'Address'
+2025-08-26 13:25:59,098 - INFO - Error checking cell: 'NoneType' object has no attribute 'Address'
+2025-08-26 13:25:59,229 - INFO - Error checking cell: 'NoneType' object has no attribute 'Address'
+2025-08-26 13:25:59,321 - INFO - Monitoring stopped

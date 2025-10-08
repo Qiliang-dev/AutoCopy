@@ -1,0 +1,73 @@
+2025-09-18 10:39:13,008 - INFO - Logging system initialized
+2025-09-18 10:39:13,040 - INFO - Settings loaded successfully
+2025-09-18 10:39:13,103 - INFO - Application started. Please connect to Excel and click 'Start Monitoring'
+2025-09-18 10:39:13,105 - INFO - New content detected: (uwb-acquisition-tool-py3.11) PS C:\Users\qmgdr54\Desktop\child-presence-data-harvester> poetry run cpd-data-harvester
+
+[17/09/2025 16:49:54][INFO] - Warning light CAN device initialized (Virtual - for testing)
+
+2025-09-17 16:49:54,625 - INFO - Warning light CAN device initialized (Virtual - for testing)
+
+2025-09-17 16:49:54,625 - WARNING - VectorBus was not properly shut down
+
+[17/09/2025 16:49:58][INFO] - Warning light checkbox toggled: True
+
+2025-09-17 16:49:58,866 - INFO - Warning light checkbox toggled: True
+
+[17/09/2025 16:49:58][INFO] - Setting warning light enabled: True
+
+2025-09-17 16:49:58,866 - INFO - Setting warning light enabled: True
+
+[17/09/2025 16:49:58][INFO] - Starting warning light blinking
+
+2025-09-17 16:49:58,866 - INFO - Starting warning light blinking
+
+[17/09/2025 16:49:58][INFO] - Warning light CAN message sent: ON
+
+2025-09-17 16:49:58,866 - INFO - Warning light CAN message sent: ON
+
+[17/09/2025 16:49:58][INFO] - Warning light CAN message sent: ON
+
+2025-09-17 16:49:58,866 - INFO - Warning light CAN message sent: ON
+
+[17/09/2025 16:49:59][INFO] - Warning light CAN message sent: OFF
+
+2025-09-17 16:49:59,356 - INFO - Warning light CAN message sent: OFF
+
+[17/09/2025 16:49:59][INFO] - Warning light CAN message sent: ON
+
+2025-09-17 16:49:59,861 - INFO - Warning light CAN message sent: ON
+
+[17/09/2025 16:50:00][INFO] - Warning light CAN message sent: OFF
+
+2025-09-17 16:50:00,355 - INFO - Warning light CAN message sent: OFF
+
+[17/09/2025 16:50:00][INFO] - Warning light CAN message sent: ON
+
+2025-09-17 16:50:00,862 - INFO - Warning light CAN message sent: ON
+
+[17/09/2025 16:50:01][INFO] - Warning light checkbox toggled: False
+
+2025-09-17 16:50:01,337 - INFO - Warning light checkbox toggled: False
+
+[17/09/2025 16:50:01][INFO] - Setting warning light enabled: False
+
+2025-09-17 16:50:01,337 - INFO - Setting warning light enabled: False
+
+[17/09/2025 16:50:01][INFO] - Warning light CAN message sent: OFF
+
+2025-09-17 16:50:01,337 - INFO - Warning light CAN message sent: OFF
+ 
+2025-09-18 10:39:13,107 - INFO - UI updated from settings: ignore_max_move=True, max_files=16
+2025-09-18 10:39:13,107 - INFO - AutoCopy application started successfully
+2025-09-18 10:39:13,109 - INFO - Application started with crash protection and settings persistence
+2025-09-18 10:39:27,009 - INFO - Phone alert test sent
+2025-09-18 10:39:28,777 - INFO - Phone alert sent successfully (3/3 messages)
+2025-09-18 10:39:36,310 - INFO - Phone alert test sent
+2025-09-18 10:39:37,971 - INFO - Phone alert sent successfully (3/3 messages)
+2025-09-18 10:44:13,178 - INFO - Health check #10: Running=False, Excel=Disconnected
+2025-09-18 10:49:13,256 - INFO - Health check #20: Running=False, Excel=Disconnected
+2025-09-18 10:54:13,323 - INFO - Health check #30: Running=False, Excel=Disconnected
+2025-09-18 10:59:13,423 - INFO - Health check #40: Running=False, Excel=Disconnected
+2025-09-18 11:04:13,508 - INFO - Health check #50: Running=False, Excel=Disconnected
+2025-09-18 11:08:49,662 - INFO - Settings saved successfully
+2025-09-18 11:08:49,663 - INFO - Settings saved on close

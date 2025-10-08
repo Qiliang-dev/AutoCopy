@@ -1,8 +1,0 @@
-{
-  "auto_paste": true,
-  "clipboard_patterns": ["^[A-Z][0-9]{5}$", "^[0-9]{8}$"],
-  "duplicate_time": 3,
-  "excel_format": "General",
-  "notification_duration": 2,
-  "suppress_warnings": false
-}

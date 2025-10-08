@@ -1,0 +1,273 @@
+2025-08-29 11:10:50,910 - INFO - Logging system initialized
+2025-08-29 11:10:50,942 - INFO - Settings loaded successfully
+2025-08-29 11:10:51,114 - INFO - Application started. Please connect to Excel and click 'Start Monitoring'
+2025-08-29 11:10:51,115 - INFO - AutoCopy application started successfully
+2025-08-29 11:10:51,124 - INFO - Application started with crash protection and settings persistence
+2025-08-29 11:11:06,131 - INFO - Attempting to connect to Excel
+2025-08-29 11:11:06,168 - INFO - Successfully obtained Excel application object
+2025-08-29 11:11:06,340 - INFO - Connected to Excel. Workbook: test.xlsx, Sheet: Tabelle1
+2025-08-29 11:11:06,340 - INFO - Current cell: $A$1
+2025-08-29 11:11:06,340 - INFO - Excel connection successful - Workbook: test.xlsx, Sheet: Tabelle1, Cell: $A$1
+2025-08-29 11:11:06,991 - INFO - Starting monitoring process
+2025-08-29 11:11:06,992 - INFO - Starting monitoring...
+2025-08-29 11:11:06,992 - INFO - Monitoring started with settings: reminder_time=20, row_skip=1, max_files=4
+2025-08-29 11:11:06,993 - INFO - Target Excel: test.xlsx
+2025-08-29 11:11:07,009 - INFO - Current selected cell: $A$1
+2025-08-29 11:11:07,009 - INFO - Current cell: $A$1
+2025-08-29 11:11:07,010 - INFO - Clipboard monitoring thread started
+2025-08-29 11:11:07,011 - INFO - Auto-paste mode: Content will be pasted automatically when detected
+2025-08-29 11:11:07,015 - INFO - Clipboard monitoring started...
+2025-08-29 11:11:08,865 - INFO - Auto move to next row: Enabled
+2025-08-29 11:13:51,238 - INFO - New content detected: 2025_05_08_104700_LG68384_C
+2025-08-29 11:13:51,430 - INFO - Content set to cell $A$1
+2025-08-29 11:13:51,477 - INFO - Cell not full (1/4 valid files), staying in current cell
+2025-08-29 11:13:52,362 - INFO - Mouse movement detected
+2025-08-29 11:13:52,362 - INFO - Activity detected - stopping monitoring
+2025-08-29 11:13:55,305 - INFO - New content detected: 2025_02_25_143307_DA00097_A
+2025-08-29 11:13:55,438 - INFO - Cell already has content, appending with new line
+2025-08-29 11:13:55,472 - INFO - Content appended to cell $A$1
+2025-08-29 11:13:55,503 - INFO - Cell not full (2/4 valid files), staying in current cell
+2025-08-29 11:13:56,153 - INFO - Mouse movement detected
+2025-08-29 11:13:56,153 - INFO - Activity detected - stopping monitoring
+2025-08-29 11:13:58,332 - INFO - New content detected: 2025_02_25_143253_DA00097_A
+2025-08-29 11:13:58,470 - INFO - Cell already has content, appending with new line
+2025-08-29 11:13:58,494 - INFO - Content appended to cell $A$1
+2025-08-29 11:13:58,549 - INFO - Cell not full (3/4 valid files), staying in current cell
+2025-08-29 11:13:58,989 - INFO - Mouse movement detected
+2025-08-29 11:13:58,989 - INFO - Activity detected - stopping monitoring
+2025-08-29 11:14:05,874 - INFO - New content detected: 2025_04_26_001715_DA00097_A
+2025-08-29 11:14:06,002 - INFO - Cell already has content, appending with new line
+2025-08-29 11:14:06,035 - INFO - Content appended to cell $A$1
+2025-08-29 11:14:06,060 - INFO - Cell is full (4/4 valid files), moving to next row
+2025-08-29 11:14:06,167 - INFO - Cell selection changed: $A$2
+2025-08-29 11:14:06,184 - INFO - Automatically moved 1 rows down: $A$2
+2025-08-29 11:14:06,619 - INFO - Mouse movement detected
+2025-08-29 11:14:06,625 - INFO - Activity detected - stopping monitoring
+2025-08-29 11:14:58,370 - INFO - Cell selection changed: $A$1
+2025-08-29 11:15:04,323 - INFO - Attempting to connect to Excel
+2025-08-29 11:15:04,336 - INFO - Successfully obtained Excel application object
+2025-08-29 11:15:04,368 - INFO - Connected to Excel. Workbook: test.xlsx, Sheet: Tabelle1
+2025-08-29 11:15:04,368 - INFO - Current cell: $A$1
+2025-08-29 11:15:04,368 - INFO - Excel connection successful - Workbook: test.xlsx, Sheet: Tabelle1, Cell: $A$1
+2025-08-29 11:15:06,600 - INFO - Monitoring stopped
+2025-08-29 11:15:07,025 - INFO - Starting monitoring process
+2025-08-29 11:15:07,031 - INFO - Starting monitoring...
+2025-08-29 11:15:07,031 - INFO - Monitoring started with settings: reminder_time=20, row_skip=1, max_files=4
+2025-08-29 11:15:07,032 - INFO - Target Excel: test.xlsx
+2025-08-29 11:15:07,051 - INFO - Current selected cell: $A$1
+2025-08-29 11:15:07,052 - INFO - Current cell: $A$1
+2025-08-29 11:15:07,053 - INFO - Clipboard monitoring thread started
+2025-08-29 11:15:07,054 - INFO - Auto-paste mode: Content will be pasted automatically when detected
+2025-08-29 11:15:07,061 - INFO - Clipboard monitoring started...
+2025-08-29 11:15:26,451 - INFO - Content set to cell $A$1
+2025-08-29 11:15:26,515 - INFO - Cell not full (1/4 valid files), staying in current cell
+2025-08-29 11:15:26,583 - INFO - New content detected: 2024_07_31_095854_E
+2025-08-29 11:15:26,594 - INFO - New content detected: 2024_07_31_095854_E
+2025-08-29 11:15:26,733 - INFO - Mouse movement detected
+2025-08-29 11:15:26,733 - INFO - Activity detected - stopping monitoring
+2025-08-29 11:15:33,621 - INFO - New content detected: 2024_07_31_133811_A
+2025-08-29 11:15:33,626 - INFO - New content detected: 2024_07_31_133811_A
+2025-08-29 11:15:33,833 - INFO - Cell already has content, appending with new line
+2025-08-29 11:15:33,869 - INFO - Content appended to cell $A$1
+2025-08-29 11:15:33,888 - INFO - Cell not full (2/4 valid files), staying in current cell
+2025-08-29 11:15:34,226 - INFO - Mouse movement detected
+2025-08-29 11:15:34,226 - INFO - Activity detected - stopping monitoring
+2025-08-29 11:15:38,041 - INFO - Cell already has content, appending with new line
+2025-08-29 11:15:38,069 - INFO - Content appended to cell $A$1
+2025-08-29 11:15:38,100 - INFO - Cell not full (3/4 valid files), staying in current cell
+2025-08-29 11:15:38,167 - INFO - New content detected: 2024_09_16_122208_A
+2025-08-29 11:15:38,168 - INFO - New content detected: 2024_09_16_122208_A
+2025-08-29 11:15:38,324 - INFO - Mouse movement detected
+2025-08-29 11:15:38,324 - INFO - Activity detected - stopping monitoring
+2025-08-29 11:15:42,155 - INFO - Cell already has content, appending with new line
+2025-08-29 11:15:42,202 - INFO - Content appended to cell $A$1
+2025-08-29 11:15:42,265 - INFO - Cell is full (4/4 valid files), moving to next row
+2025-08-29 11:15:42,367 - INFO - Cell selection changed: $A$7
+2025-08-29 11:15:42,367 - INFO - Automatically moved 6 rows down: $A$7
+2025-08-29 11:15:42,399 - INFO - New content detected: 2024_09_16_123429_A
+2025-08-29 11:15:42,399 - INFO - New content detected: 2024_09_16_123429_A
+2025-08-29 11:15:43,149 - INFO - Mouse movement detected
+2025-08-29 11:15:43,154 - INFO - Activity detected - stopping monitoring
+2025-08-29 13:13:43,696 - INFO - Logging system initialized
+2025-08-29 13:13:43,711 - INFO - Settings loaded successfully
+2025-08-29 13:13:43,791 - INFO - Application started. Please connect to Excel and click 'Start Monitoring'
+2025-08-29 13:13:43,795 - INFO - AutoCopy application started successfully
+2025-08-29 13:13:43,800 - INFO - Application started with crash protection and settings persistence
+2025-08-29 13:13:46,158 - INFO - Attempting to connect to Excel
+2025-08-29 13:13:46,194 - INFO - Successfully obtained Excel application object
+2025-08-29 13:13:46,255 - INFO - Connected to Excel. Workbook: test.xlsx, Sheet: Tabelle1
+2025-08-29 13:13:46,270 - INFO - Current cell: $A$2
+2025-08-29 13:13:46,270 - INFO - Excel connection successful - Workbook: test.xlsx, Sheet: Tabelle1, Cell: $A$2
+2025-08-29 13:13:47,783 - INFO - Starting monitoring process
+2025-08-29 13:13:47,788 - INFO - Starting monitoring...
+2025-08-29 13:13:47,788 - INFO - Monitoring started with settings: reminder_time=20, row_skip=1, max_files=4
+2025-08-29 13:13:47,789 - INFO - Target Excel: test.xlsx
+2025-08-29 13:13:47,807 - INFO - Current selected cell: $A$2
+2025-08-29 13:13:47,808 - INFO - Current cell: $A$2
+2025-08-29 13:13:47,810 - INFO - Clipboard monitoring thread started
+2025-08-29 13:13:47,811 - INFO - Auto-paste mode: Content will be pasted automatically when detected
+2025-08-29 13:13:47,824 - INFO - Clipboard monitoring started...
+2025-08-29 13:14:40,835 - INFO - Attempting to connect to Excel
+2025-08-29 13:14:40,850 - INFO - Successfully obtained Excel application object
+2025-08-29 13:14:40,901 - INFO - Connected to Excel. Workbook: test.xlsx, Sheet: Tabelle1
+2025-08-29 13:14:40,902 - INFO - Current cell: $A$2
+2025-08-29 13:14:40,902 - INFO - Excel connection successful - Workbook: test.xlsx, Sheet: Tabelle1, Cell: $A$2
+2025-08-29 13:14:41,896 - INFO - Monitoring stopped
+2025-08-29 13:14:42,337 - INFO - Starting monitoring process
+2025-08-29 13:14:42,337 - INFO - Starting monitoring...
+2025-08-29 13:14:42,337 - INFO - Monitoring started with settings: reminder_time=20, row_skip=1, max_files=4
+2025-08-29 13:14:42,338 - INFO - Target Excel: test.xlsx
+2025-08-29 13:14:42,351 - INFO - Current selected cell: $A$2
+2025-08-29 13:14:42,351 - INFO - Current cell: $A$2
+2025-08-29 13:14:42,352 - INFO - Clipboard monitoring thread started
+2025-08-29 13:14:42,353 - INFO - Auto-paste mode: Content will be pasted automatically when detected
+2025-08-29 13:14:42,357 - INFO - Clipboard monitoring started...
+2025-08-29 13:14:43,362 - INFO - New content detected: 
+2025-08-29 13:14:43,916 - INFO - New content detected: 2025_02_25_143307_DA00097_A
+2025-08-29 13:14:45,209 - INFO - Auto move to next row: Enabled
+2025-08-29 13:15:36,528 - INFO - New content detected: 2025_08_29_131514_H022130_E;20...
+2025-08-29 13:15:36,716 - INFO - Content set to cell $A$2
+2025-08-29 13:15:36,756 - INFO - Cell not full (1/2 valid files), staying in current cell
+2025-08-29 13:15:56,772 - INFO - No activity detected for specified time - showing reminder
+2025-08-29 13:15:57,360 - INFO - Phone alert failed: HTTPSConnectionPool(host='ntfy.sh', port=443): Max retries exceeded with url: /autocopy_CPD (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x0000016C463AB3D0>: Failed to resolve 'ntfy.sh' ([Errno 11001] getaddrinfo failed)"))
+2025-08-29 13:16:34,158 - INFO - Cell selection changed: $A$1
+2025-08-29 13:16:42,973 - INFO - Ignore max for move: Enabled
+2025-08-29 13:16:58,659 - INFO - Cell selection changed: $A$3
+2025-08-29 13:17:08,719 - INFO - New content detected: 2025_08_29_131706_H022130_E;20...
+2025-08-29 13:17:08,955 - INFO - Content set to cell $A$3
+2025-08-29 13:17:08,969 - INFO - Ignore max for move enabled: moving to next row after paste
+2025-08-29 13:17:09,024 - INFO - Cell selection changed: $A$4
+2025-08-29 13:17:09,033 - INFO - Current cell file count: 0
+2025-08-29 13:17:09,037 - INFO - Automatically moved 1 rows down: $A$4
+2025-08-29 13:17:09,570 - INFO - Mouse movement detected
+2025-08-29 13:17:09,571 - INFO - Activity detected - stopping monitoring
+2025-08-29 13:17:13,943 - INFO - Ignore max for move: Disabled
+2025-08-29 13:18:02,469 - INFO - New content detected: 2025_08_29_131806_H022130_E;20...
+2025-08-29 13:18:02,623 - INFO - Content set to cell $A$4
+2025-08-29 13:18:02,731 - INFO - Cell not full (1/2 valid files), staying in current cell
+2025-08-29 13:18:22,827 - INFO - No activity detected for specified time - showing reminder
+2025-08-29 13:18:22,895 - INFO - Phone alert failed: HTTPSConnectionPool(host='ntfy.sh', port=443): Max retries exceeded with url: /autocopy_CPD (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x0000016C463C1E90>: Failed to resolve 'ntfy.sh' ([Errno 11001] getaddrinfo failed)"))
+2025-08-29 13:19:36,650 - INFO - New content detected: 䶠䗄Ŭ
+2025-08-29 13:19:40,684 - INFO - New content detected: 
+2025-08-29 13:19:41,230 - INFO - New content detected: 䶠䗄Ŭ
+2025-08-29 13:24:30,307 - INFO - Settings saved successfully
+2025-08-29 13:24:30,310 - INFO - Settings saved on exit
+2025-08-29 13:24:38,000 - INFO - New content detected: 
+2025-08-29 13:25:50,754 - INFO - Settings saved successfully
+2025-08-29 13:25:50,757 - INFO - Settings saved on exit
+2025-08-29 13:25:51,905 - INFO - Monitoring stopped
+2025-08-29 13:25:54,003 - INFO - Logging system initialized
+2025-08-29 13:25:54,019 - INFO - Settings loaded successfully
+2025-08-29 13:25:54,053 - INFO - Application started. Please connect to Excel and click 'Start Monitoring'
+2025-08-29 13:25:54,055 - INFO - AutoCopy application started successfully
+2025-08-29 13:25:54,058 - INFO - Application started with crash protection and settings persistence
+2025-08-29 13:25:56,659 - INFO - Starting monitoring process
+2025-08-29 13:25:56,659 - WARNING - Excel not connected when starting monitoring
+2025-08-29 13:25:57,622 - INFO - Attempting to connect to Excel
+2025-08-29 13:25:57,641 - INFO - Successfully obtained Excel application object
+2025-08-29 13:25:57,724 - INFO - Connected to Excel. Workbook: test.xlsx, Sheet: Tabelle1
+2025-08-29 13:25:57,725 - INFO - Current cell: $A$4
+2025-08-29 13:25:57,726 - INFO - Excel connection successful - Workbook: test.xlsx, Sheet: Tabelle1, Cell: $A$4
+2025-08-29 13:25:57,726 - INFO - Starting monitoring...
+2025-08-29 13:25:57,726 - INFO - Monitoring started with settings: reminder_time=20, row_skip=1, max_files=2
+2025-08-29 13:25:57,727 - INFO - Target Excel: test.xlsx
+2025-08-29 13:25:57,739 - INFO - Current selected cell: $A$4
+2025-08-29 13:25:57,739 - INFO - Current cell: $A$4
+2025-08-29 13:25:57,739 - INFO - Clipboard monitoring thread started
+2025-08-29 13:25:57,739 - INFO - Auto-paste mode: Content will be pasted automatically when detected
+2025-08-29 13:25:57,758 - INFO - Clipboard monitoring started...
+2025-08-29 13:26:03,339 - INFO - Cell selection changed: $A$1
+2025-08-29 13:26:05,193 - INFO - Cell selection changed: $C$3
+2025-08-29 13:26:05,719 - INFO - Cell selection changed: $A$1
+2025-08-29 13:26:20,805 - INFO - New content detected: 2025_08_29_132624_H022130_E;20...
+2025-08-29 13:26:21,099 - INFO - Content set to cell $A$1
+2025-08-29 13:26:21,217 - INFO - Mouse movement detected
+2025-08-29 13:26:21,218 - INFO - Activity detected - stopping monitoring
+2025-08-29 13:26:27,093 - INFO - Auto move to next row: Enabled
+2025-08-29 13:26:39,549 - INFO - New content detected: 2025_08_29_132643_H022130_E;20...
+2025-08-29 13:26:39,831 - INFO - Content set to cell $A$1
+2025-08-29 13:26:39,872 - INFO - Cell not full (1/2 valid files), staying in current cell
+2025-08-29 13:26:59,932 - INFO - No activity detected for specified time - showing reminder
+2025-08-29 13:27:01,719 - INFO - Phone alert sent successfully (3/3 messages)
+2025-08-29 13:29:25,892 - INFO - New content detected: 
+2025-08-29 13:29:26,420 - INFO - New content detected: 2025_08_29_132643_H022130_E;20...
+2025-08-29 13:32:41,262 - INFO - New content detected: 
+2025-08-29 13:32:41,790 - INFO - New content detected: 2025_08_29_132643_H022130_E;20...
+2025-08-29 13:34:33,482 - INFO - New content detected: 
+2025-08-29 13:34:34,011 - INFO - New content detected: 2025_08_29_132643_H022130_E;20...
+2025-08-29 14:05:00,583 - INFO - Logging system initialized
+2025-08-29 14:05:00,615 - INFO - Settings loaded successfully
+2025-08-29 14:05:00,672 - INFO - Application started. Please connect to Excel and click 'Start Monitoring'
+2025-08-29 14:05:00,683 - INFO - AutoCopy application started successfully
+2025-08-29 14:05:00,684 - INFO - Application started with crash protection and settings persistence
+2025-08-29 14:05:05,964 - INFO - Starting monitoring process
+2025-08-29 14:05:05,964 - WARNING - Excel not connected when starting monitoring
+2025-08-29 14:05:07,313 - INFO - Attempting to connect to Excel
+2025-08-29 14:05:07,344 - INFO - Successfully obtained Excel application object
+2025-08-29 14:05:07,388 - INFO - Connected to Excel. Workbook: test.xlsx, Sheet: Tabelle1
+2025-08-29 14:05:07,388 - INFO - Current cell: $A$1
+2025-08-29 14:05:07,388 - INFO - Excel connection successful - Workbook: test.xlsx, Sheet: Tabelle1, Cell: $A$1
+2025-08-29 14:05:07,388 - INFO - Starting monitoring...
+2025-08-29 14:05:07,388 - INFO - Monitoring started with settings: reminder_time=20, row_skip=1, max_files=2
+2025-08-29 14:05:07,388 - INFO - Target Excel: test.xlsx
+2025-08-29 14:05:07,409 - INFO - Current selected cell: $A$1
+2025-08-29 14:05:07,409 - INFO - Current cell: $A$1
+2025-08-29 14:05:07,410 - INFO - Clipboard monitoring thread started
+2025-08-29 14:05:07,411 - INFO - Auto-paste mode: Content will be pasted automatically when detected
+2025-08-29 14:05:07,423 - INFO - Clipboard monitoring started...
+2025-08-29 14:05:23,027 - INFO - New content detected: 2025_08_29_140527_H022130_E;20...
+2025-08-29 14:05:23,285 - INFO - Paste blocked: clipboard 2 > available 1 (limit 2)
+2025-08-29 14:05:23,289 - INFO - Paste failed. Please check Excel connection.
+2025-08-29 14:05:23,766 - INFO - Mouse movement detected
+2025-08-29 14:05:23,772 - INFO - Activity detected - stopping monitoring
+2025-08-29 14:05:25,000 - INFO - Cell selection changed: $B$1
+2025-08-29 14:05:29,188 - INFO - Auto move to next row: Enabled
+2025-08-29 14:05:40,630 - INFO - New content detected: 2025_08_29_140544_H022130_E;20...
+2025-08-29 14:05:40,798 - INFO - Content set to cell $B$1
+2025-08-29 14:05:40,811 - INFO - Cell not full (1/2 valid files), staying in current cell
+2025-08-29 14:05:42,124 - INFO - Mouse movement detected
+2025-08-29 14:05:42,125 - INFO - Activity detected - stopping monitoring
+2025-08-29 14:05:57,123 - INFO - New content detected: ͠ᝯȅ
+2025-08-29 14:06:09,689 - INFO - New content detected: ᐑȅ
+2025-08-29 14:06:59,819 - INFO - New content detected: 
+2025-08-29 14:18:56,036 - INFO - Logging system initialized
+2025-08-29 14:18:56,067 - INFO - Settings loaded successfully
+2025-08-29 14:18:56,173 - INFO - Application started. Please connect to Excel and click 'Start Monitoring'
+2025-08-29 14:18:56,178 - INFO - AutoCopy application started successfully
+2025-08-29 14:18:56,186 - INFO - Application started with crash protection and settings persistence
+2025-08-29 14:19:00,196 - INFO - Settings saved successfully
+2025-08-29 14:19:00,197 - INFO - Settings saved on exit
+2025-08-29 14:19:16,080 - INFO - Logging system initialized
+2025-08-29 14:19:16,080 - INFO - Settings loaded successfully
+2025-08-29 14:19:16,140 - INFO - Application started. Please connect to Excel and click 'Start Monitoring'
+2025-08-29 14:19:16,140 - INFO - AutoCopy application started successfully
+2025-08-29 14:19:16,140 - INFO - Application started with crash protection and settings persistence
+2025-08-29 14:21:12,489 - INFO - Starting monitoring process
+2025-08-29 14:21:12,489 - WARNING - Excel not connected when starting monitoring
+2025-08-29 14:21:14,362 - INFO - Attempting to connect to Excel
+2025-08-29 14:21:14,393 - INFO - Successfully obtained Excel application object
+2025-08-29 14:21:14,428 - INFO - Connected to Excel. Workbook: test.xlsx, Sheet: Tabelle1
+2025-08-29 14:21:14,432 - INFO - Current cell: $B$1
+2025-08-29 14:21:14,432 - INFO - Excel connection successful - Workbook: test.xlsx, Sheet: Tabelle1, Cell: $B$1
+2025-08-29 14:21:14,433 - INFO - Starting monitoring...
+2025-08-29 14:21:14,433 - INFO - Monitoring started with settings: reminder_time=20, row_skip=1, max_files=2
+2025-08-29 14:21:14,433 - INFO - Target Excel: test.xlsx
+2025-08-29 14:21:14,433 - INFO - Current selected cell: $B$1
+2025-08-29 14:21:14,433 - INFO - Current cell: $B$1
+2025-08-29 14:21:14,433 - INFO - Clipboard monitoring thread started
+2025-08-29 14:21:14,433 - INFO - Auto-paste mode: Content will be pasted automatically when detected
+2025-08-29 14:21:14,471 - INFO - Clipboard monitoring started...
+2025-08-29 14:21:17,895 - INFO - Cell selection changed: $A$1
+2025-08-29 14:21:22,490 - INFO - Auto move to next row: Enabled
+2025-08-29 14:21:34,000 - INFO - New content detected: 2025_08_29_142138_H022130_E;20...
+2025-08-29 14:21:34,181 - INFO - Content set to cell $A$1
+2025-08-29 14:21:34,225 - INFO - Cell is full (2/2 valid files), moving to next row
+2025-08-29 14:21:34,319 - INFO - Cell selection changed: $A$2
+2025-08-29 14:21:34,330 - INFO - Current cell file count: 0
+2025-08-29 14:21:34,342 - INFO - Automatically moved 1 rows down: $A$2
+2025-08-29 14:21:35,202 - INFO - Mouse movement detected
+2025-08-29 14:21:35,203 - INFO - Activity detected - stopping monitoring
+2025-08-29 14:21:50,297 - INFO - Cell selection changed: $A$1
+2025-08-29 14:21:55,817 - INFO - Settings saved successfully
+2025-08-29 14:21:55,818 - INFO - Settings saved on exit
+2025-08-29 14:21:56,970 - INFO - Monitoring stopped

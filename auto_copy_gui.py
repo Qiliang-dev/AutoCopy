@@ -1,5 +1,6 @@
 import pyperclip
 import pyautogui
+import logging
 import re
 import time
 import tkinter as tk
@@ -14,7 +15,6 @@ import win32api
 import win32con
 from ctypes import windll
 from ctypes import wintypes
-import requests
 
 class AutoCopyApp:
     def __init__(self, root):
@@ -25,6 +25,7 @@ class AutoCopyApp:
         self.target_excel = "Not specified"  # Initialize before any method calls
         self.excel_app = None
         self.current_cell = "Not selected"
+        self.ignore_initial_clipboard = False  # Skip auto-paste for baseline clipboard content
         self.excel_check_timer = None
         self.excel_monitor_thread = None
         self.excel_cell_monitor_active = False  # 新增标志，表示Excel单元格监控是否活跃
@@ -42,7 +43,6 @@ class AutoCopyApp:
         self.global_hook_thread = None  # 新增：全局钩子线程
         self.activity_detected = False  # 新增：活动检测标志
         self.last_mouse_pos = None  # 新增：上次鼠标位置
-        self.phone_notification_enabled = True  # 新增：手机通知开关，默认开启
         self.last_successful_paste_content = ""  # 新增：上次成功粘贴的内容
         
         self.root = root
@@ -115,9 +115,6 @@ class AutoCopyApp:
         self.exit_button.grid(row=1, column=0, padx=5, pady=5, sticky=tk.W)
         self.auto_move_button = ttk.Button(control_frame, text="Auto Move Next: OFF", command=self.toggle_auto_move)
         self.auto_move_button.grid(row=1, column=1, padx=5, pady=5, sticky=tk.W)
-        # 添加手机提醒测试按钮
-        self.test_phone_button = ttk.Button(control_frame, text="Test Phone Alert", command=self.test_phone_alert)
-        self.test_phone_button.grid(row=1, column=2, padx=5, pady=5, sticky=tk.W)
         
         # 剪贴板内容显示区域
         clipboard_frame = ttk.LabelFrame(main_frame, text="Current Clipboard Content", padding="10")
@@ -156,22 +153,7 @@ class AutoCopyApp:
         row_skip_entry.grid(row=3, column=1, sticky=tk.W, padx=2, pady=2)
         ttk.Label(format_frame, text="(Rows to skip when auto moving)", font=("Arial", 8)).grid(row=3, column=2, sticky=tk.W, padx=2, pady=2)
         
-        # 手机通知设置
-        ttk.Label(format_frame, text="Phone Notification:").grid(row=4, column=0, sticky=tk.W, padx=5, pady=2)
-        self.phone_notify_button = ttk.Button(format_frame, text="Phone Alert: ON", 
-                                             command=self.toggle_phone_notification)
-        self.phone_notify_button.grid(row=4, column=1, sticky=tk.W, padx=2, pady=2)
-        
-        self.ntfy_topic_var = tk.StringVar(value="autocopy_CPD")
-        topic_entry = ttk.Entry(format_frame, textvariable=self.ntfy_topic_var, width=20)
-        topic_entry.grid(row=4, column=2, sticky=tk.W, padx=2, pady=2)
-        ttk.Label(format_frame, text="(ntfy topic name)", font=("Arial", 8)).grid(row=4, column=3, sticky=tk.W, padx=2, pady=2)
-        
         # 匹配状态显示
-        ttk.Label(format_frame, text="Match Status:").grid(row=5, column=0, sticky=tk.W, padx=5, pady=5)
-        self.match_status_label = ttk.Label(format_frame, text="Not checked")
-        self.match_status_label.grid(row=5, column=1, sticky=tk.W, padx=5, pady=5)
-        
         # 日志区域
         log_frame = ttk.LabelFrame(main_frame, text="Log", padding="10")
         log_frame.pack(fill=tk.BOTH, expand=True, pady=5)
@@ -286,19 +268,18 @@ class AutoCopyApp:
                 # 检查是否匹配格式
                 match_result = self.is_valid_format(content)
                 if match_result:
-                    self.match_status_label.config(text="Matches Pattern", foreground="green")
-                    
                     # 检查是否与上次成功粘贴的内容相同
                     is_same_as_last_pasted = hasattr(self, 'last_successful_paste_content') and content == self.last_successful_paste_content
-                    
 
-                    
                     # 如果正在监控并且匹配成功且不是重复内容且不与上次粘贴内容相同，显示通知并自动粘贴
-                    if self.running and not is_duplicate and not is_same_as_last_pasted:
+                    if getattr(self, "ignore_initial_clipboard", False):
+                        self.ignore_initial_clipboard = False
+                        self.log("Initial clipboard content ignored; waiting for the next clipboard change")
+                    elif self.running and not is_duplicate and not is_same_as_last_pasted:
                         # 保存此次操作数据，用于防止重复
                         self.last_pasted_content = content
                         self.last_paste_time = current_time
-                        
+
                         # 延迟一小段时间后执行粘贴操作，给UI时间更新
                         self.root.after(100, lambda: self.auto_paste_with_notification(content))
                     elif is_same_as_last_pasted:
@@ -306,7 +287,7 @@ class AutoCopyApp:
                     elif is_duplicate:
                         self.log(f"Duplicate content detected within time threshold, skipping auto-paste")
                 else:
-                    self.match_status_label.config(text="Does Not Match", foreground="red")
+                    self.log("Clipboard content does not match pattern")
             
             # 设置剪贴板检查定时器 - 每秒更新一次
             self.root.after(1000, self.update_clipboard_display)
@@ -697,35 +678,64 @@ class AutoCopyApp:
     def monitor_clipboard(self):
         """监控剪贴板内容"""
         try:
-            self.previous_content = pyperclip.paste()
+            try:
+                self.previous_content = pyperclip.paste()
+            except Exception as initial_error:
+                self.previous_content = ""
+                self.log(f"Initial clipboard read failed: {initial_error}")
+                traceback.print_exc()
+
             self.log("Clipboard monitoring started...")
-            
+            consecutive_clipboard_errors = 0
+            consecutive_loop_errors = 0
+            max_errors = 10
+
             while self.running:
                 try:
-                    current_content = pyperclip.paste()
-                    
-                    # 检查剪贴板内容是否有变化
+                    try:
+                        current_content = pyperclip.paste()
+                        consecutive_clipboard_errors = 0
+                    except Exception as clipboard_error:
+                        consecutive_clipboard_errors += 1
+                        if consecutive_clipboard_errors <= 3:
+                            self.log(f"Clipboard access error #{consecutive_clipboard_errors}: {clipboard_error}")
+                        else:
+                            self.log(f"Clipboard access error #{consecutive_clipboard_errors}")
+
+                        if consecutive_clipboard_errors >= max_errors:
+                            self.log("Too many consecutive clipboard errors; pausing before retry", level=logging.WARNING)
+                            time.sleep(5.0)
+                            consecutive_clipboard_errors = 0
+                        else:
+                            time.sleep(min(1.0 + 0.2 * consecutive_clipboard_errors, 2.0))
+                        continue
+
                     if current_content != self.previous_content:
-                        content_preview = current_content[:30] + "..." if len(current_content) > 30 else current_content
+                        content_preview = current_content[:30] + "..." if current_content and len(current_content) > 30 else current_content
                         self.log(f"New content detected: {content_preview}")
-                        
-                        # 更新剪贴板显示
+
                         self.root.after(0, self.update_clipboard_display)
-                        
-                        # 每次粘贴前刷新当前单元格信息
                         if self.excel_app:
                             self.refresh_current_cell()
-                        
-                        # 注意：现在使用update_clipboard_display方法显示确认对话框，不再在此处执行自动粘贴
+
                         self.previous_content = current_content
-                        
-                except Exception as e:
-                    self.log(f"Monitoring loop error: {str(e)}")
-                
-                # 短暂暂停以减少CPU使用
-                time.sleep(0.5)
+
+                    consecutive_loop_errors = 0
+                    time.sleep(0.5)
+                except Exception as loop_error:
+                    consecutive_loop_errors += 1
+                    self.log(f"Monitoring loop error #{consecutive_loop_errors}: {loop_error}")
+                    traceback.print_exc()
+
+                    if consecutive_loop_errors >= max_errors:
+                        self.log("Too many monitoring loop errors; attempting automatic recovery", level=logging.WARNING)
+                        time.sleep(5.0)
+                        consecutive_loop_errors = 0
+                    else:
+                        time.sleep(min(1.0 + 0.2 * consecutive_loop_errors, 2.0))
         except Exception as e:
-            self.log(f"Monitoring thread error: {str(e)}")
+            self.log(f"Monitoring thread error: {str(e)}", level=logging.ERROR)
+            traceback.print_exc()
     
     def start_monitoring(self):
         """开始监控"""
@@ -755,7 +765,20 @@ class AutoCopyApp:
             if self.excel_app:
                 self.refresh_current_cell()
                 self.log(f"Current selected cell: {self.current_cell}")
-                
+
+            # 记录当前剪贴板，避免启动时立即自动粘贴
+            self.ignore_initial_clipboard = True
+            try:
+                baseline_clipboard = pyperclip.paste()
+                if baseline_clipboard is None:
+                    baseline_clipboard = ""
+                self.previous_content = baseline_clipboard
+                self.log("Initial clipboard snapshot captured; waiting for next change")
+            except Exception as snapshot_error:
+                self.previous_content = ""
+                self.log(f"Initial clipboard snapshot failed, continuing with monitoring: {snapshot_error}")
+                traceback.print_exc()
+
             # 更新剪贴板显示
             self.update_clipboard_display()
             
@@ -854,78 +877,6 @@ class AutoCopyApp:
         self.auto_move_button.config(text=button_text)
         self.log(f"Auto move to next row: {'Enabled' if self.auto_move_next else 'Disabled'}")
 
-    def toggle_phone_notification(self):
-        """切换手机通知功能"""
-        self.phone_notification_enabled = not self.phone_notification_enabled
-        button_text = "Phone Alert: ON" if self.phone_notification_enabled else "Phone Alert: OFF"
-        self.phone_notify_button.config(text=button_text)
-        self.log(f"Phone notification: {'Enabled' if self.phone_notification_enabled else 'Disabled'}")
-
-    def send_phone_alert(self):
-        """发送手机震动提醒"""
-        if not self.phone_notification_enabled:
-            return
-            
-        topic = self.ntfy_topic_var.get().strip()
-        if not topic:
-            self.log("Phone alert failed: No topic specified")
-            return
-        
-        def send_async():
-            try:
-                url = f"https://ntfy.sh/{topic}"
-                
-                # 发送3条连续通知以增强震动效果
-                messages = [
-                    ("URGENT: AutoCopy Alert! Please continue working immediately!", "WORK REMINDER"),
-                    ("ATTENTION: Still no activity detected!", "SECOND ALERT"),
-                    ("FINAL WARNING: Resume work now!", "LAST NOTICE")
-                ]
-                
-                success_count = 0
-                for i, (message, title) in enumerate(messages):
-                    response = requests.post(
-                        url, 
-                        data=message,
-                        headers={
-                            "Title": title,
-                            "Priority": "urgent",
-                            "Tags": "warning"
-                        },
-                        timeout=5
-                    )
-                    if response.status_code == 200:
-                        success_count += 1
-                    
-                    # 每条消息间隔0.2秒，更快更密集
-                    if i < len(messages) - 1:
-                        time.sleep(0.2)
-                
-                if success_count > 0:
-                    self.log(f"Phone alert sent successfully ({success_count}/3 messages)")
-                else:
-                    self.log("All phone alerts failed")
-                    
-            except Exception as e:
-                self.log(f"Phone alert failed: {str(e)}")
-        
-        # 异步发送，不阻塞主线程
-        threading.Thread(target=send_async, daemon=True).start()
-
-    def test_phone_alert(self):
-        """测试手机提醒功能"""
-        if not self.phone_notification_enabled:
-            messagebox.showinfo("Info", "Please enable phone notification and set topic name first")
-            return
-            
-        topic = self.ntfy_topic_var.get().strip()
-        if not topic:
-            messagebox.showinfo("Info", "Please set ntfy topic name first")
-            return
-            
-        self.send_phone_alert()
-        self.log("Phone alert test sent")
-
     def start_activity_monitoring(self):
         """开始监控用户活动"""
         self.activity_monitor_active = True
@@ -1007,9 +958,6 @@ class AutoCopyApp:
     def show_reminder_dialog(self):
         if self.reminder_dialog and self.reminder_dialog.winfo_exists():
             return
-
-        # 发送手机提醒
-        self.send_phone_alert()
 
         self.reminder_dialog = tk.Toplevel(self.root)
         self.reminder_dialog.title("Activity Reminder")

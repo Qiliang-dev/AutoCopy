@@ -1,0 +1,33 @@
+2025-08-20 12:26:46,532 - INFO - Logging system initialized
+2025-08-20 12:26:46,532 - INFO - No settings file found, using defaults
+2025-08-20 12:26:46,629 - INFO - Application started. Please connect to Excel and click 'Start Monitoring'
+2025-08-20 12:26:46,629 - INFO - AutoCopy application started successfully
+2025-08-20 12:26:46,642 - INFO - Application started with crash protection and settings persistence
+2025-08-20 12:27:33,887 - INFO - Logging system initialized
+2025-08-20 12:27:33,887 - INFO - No settings file found, using defaults
+2025-08-20 12:27:33,976 - INFO - Application started. Please connect to Excel and click 'Start Monitoring'
+2025-08-20 12:27:34,017 - INFO - AutoCopy application started successfully
+2025-08-20 12:27:34,031 - INFO - Application started with crash protection and settings persistence
+2025-08-20 13:39:42,199 - INFO - Error updating clipboard display: Error calling OpenClipboard ([WinError 0] Der Vorgang wurde erfolgreich beendet.)
+2025-08-20 13:39:42,610 - INFO - Error updating clipboard display: Error calling OpenClipboard ([WinError 0] Der Vorgang wurde erfolgreich beendet.)
+2025-08-20 13:39:43,714 - INFO - Error updating clipboard display: Error calling OpenClipboard ([WinError 0] Der Vorgang wurde erfolgreich beendet.)
+2025-08-20 13:39:44,126 - INFO - Error updating clipboard display: Error calling OpenClipboard ([WinError 0] Der Vorgang wurde erfolgreich beendet.)
+2025-08-20 13:39:45,231 - INFO - Error updating clipboard display: Error calling OpenClipboard ([WinError 0] Der Vorgang wurde erfolgreich beendet.)
+2025-08-20 13:39:45,652 - INFO - Error updating clipboard display: Error calling OpenClipboard ([WinError 0] Der Vorgang wurde erfolgreich beendet.)
+2025-08-20 13:39:46,742 - INFO - Error updating clipboard display: Error calling OpenClipboard ([WinError 0] Der Vorgang wurde erfolgreich beendet.)
+2025-08-20 13:39:47,164 - INFO - Error updating clipboard display: Error calling OpenClipboard ([WinError 0] Der Vorgang wurde erfolgreich beendet.)
+2025-08-20 13:39:48,253 - INFO - Error updating clipboard display: Error calling OpenClipboard ([WinError 0] Der Vorgang wurde erfolgreich beendet.)
+2025-08-20 13:39:48,682 - INFO - Error updating clipboard display: Error calling OpenClipboard ([WinError 0] Der Vorgang wurde erfolgreich beendet.)
+2025-08-20 13:39:49,765 - INFO - Error updating clipboard display: Error calling OpenClipboard ([WinError 0] Der Vorgang wurde erfolgreich beendet.)
+2025-08-20 13:39:50,195 - INFO - Error updating clipboard display: Error calling OpenClipboard ([WinError 0] Der Vorgang wurde erfolgreich beendet.)
+2025-08-20 13:39:51,278 - INFO - Error updating clipboard display: Error calling OpenClipboard ([WinError 0] Der Vorgang wurde erfolgreich beendet.)
+2025-08-20 13:39:51,714 - INFO - Error updating clipboard display: Error calling OpenClipboard ([WinError 0] Der Vorgang wurde erfolgreich beendet.)
+2025-08-20 13:40:33,831 - INFO - Settings saved successfully
+2025-08-20 13:40:33,834 - INFO - Settings saved on exit
+2025-08-20 13:40:42,158 - INFO - Logging system initialized
+2025-08-20 13:40:42,189 - INFO - Settings loaded successfully
+2025-08-20 13:40:42,232 - INFO - Application started. Please connect to Excel and click 'Start Monitoring'
+2025-08-20 13:40:42,232 - INFO - AutoCopy application started successfully
+2025-08-20 13:40:42,237 - INFO - Application started with crash protection and settings persistence
+2025-08-20 13:40:51,558 - INFO - Settings saved successfully
+2025-08-20 13:40:51,559 - INFO - Settings saved on exit
