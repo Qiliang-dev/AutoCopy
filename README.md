@@ -49,16 +49,30 @@ AutoCopy的配置选项保存在`config/settings.json`文件中，您可以根�
 3. 检查您的剪贴板内容是否符合配置的模式
 4. 重新启动应用程序并尝试重新连接Excel
 
-## 构建和开发
+## 开发环境设置
 
-开发者可以使用以下脚本：
+### 安装依赖
 
-- `build_installer.bat`: 创建可分发的包
-- `build_resources.bat`: 准备资源文件
+```bash
+pip install -r requirements.txt
+```
+
+### 运行开发版本
+
+```bash
+python auto_copy_gui.py
+```
+
+### 打包为可执行文件
+
+```bash
+pyinstaller --onefile --noconsole --name="AutoCopy" --icon="resources/icons/autocopy.ico" auto_copy_gui.py
+```
+
+打包后的可执行文件位于 `dist/AutoCopy.exe`
+
+**注意**：打包时会生成 `build/`、`dist/` 文件夹和 `.spec` 文件，这些是临时文件，可以在打包完成后删除。
 
 ## 许可证
 
-本软件遵循MIT许可证。 
-
-## 打包
-pyinstaller --noconsole --onefile -n AutoCopyTool auto_copy_gui.py
+本软件遵循MIT许可证。

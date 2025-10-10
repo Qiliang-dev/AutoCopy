@@ -1,11 +1,13 @@
-import pyperclip
+﻿import pyperclip
 import pyautogui
 import logging
 import re
 import time
+import sys
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 import threading
+import functools
 import win32com.client
 import pythoncom
 import traceback
@@ -13,8 +15,30 @@ import winsound
 import ctypes
 import win32api
 import win32con
+from pathlib import Path
 from ctypes import windll
 from ctypes import wintypes
+
+def resolve_resource_path(relative_path: str) -> Path:
+    """Return absolute path to resource, compatible with PyInstaller."""
+    try:
+        base_path = Path(getattr(sys, "_MEIPASS"))
+    except AttributeError:
+        base_path = Path(__file__).resolve().parent
+    return (base_path / relative_path).resolve()
+
+def set_app_window_icon(root: tk.Tk):
+    """Apply the application icon to the main window and taskbar."""
+    try:
+        icon_path = resolve_resource_path("resources/icons/autocopy.ico")
+        if icon_path.exists():
+            root.iconbitmap(default=str(icon_path))
+            try:
+                ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("AutoCopy.Autocopy_V1_85")
+            except Exception:
+                pass
+    except Exception:
+        pass
 
 class AutoCopyApp:
     def __init__(self, root):
@@ -32,7 +56,8 @@ class AutoCopyApp:
         self.clipboard_content = ""  # 当前剪贴板内容
         self.confirmation_dialog = None  # 确认对话框引用
         self.last_pasted_content = ""  # 上次粘贴的内容
-        self.last_paste_time = 0  # 上次粘贴的时间戳
+        self.last_paste_time = 0
+        self.last_clipboard_sequence = self._get_clipboard_sequence_number()  # 上次粘贴的时间戳
         self.auto_move_next = False  # 新增：是否自动移动到下一行
         self.row_skip_count = 1  # 新增：自动移动时跳过的行数
         self.reminder_time = 20  # 新增：提醒等待时间（秒）
@@ -43,7 +68,13 @@ class AutoCopyApp:
         self.global_hook_thread = None  # 新增：全局钩子线程
         self.activity_detected = False  # 新增：活动检测标志
         self.last_mouse_pos = None  # 新增：上次鼠标位置
-        self.last_successful_paste_content = ""  # 新增：上次成功粘贴的内容
+        self.last_successful_paste_content = ""
+        self.initial_clipboard_snapshot = ""  # 新增：上次成功粘贴的内容
+        self.logs_dir = None
+        self.log_file_path = None
+        self.logger = None
+        self.cell_check_error_count = 0  # 新增：单元格检查错误计数器
+        self.last_cell_check_error_time = 0  # 新增：上次单元格检查错误时间
         
         self.root = root
         self.root.title("AutoCopy Tool")
@@ -52,6 +83,7 @@ class AutoCopyApp:
         
         # 添加关闭窗口处理
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
+        self._setup_logging()
         
         # Setup UI after initializing all attributes
         self.setup_ui()
@@ -180,12 +212,6 @@ class AutoCopyApp:
             return False
             
         try:
-            # 确保 COM 已初始化
-            pythoncom.CoInitialize()
-            
-            # 重新获取 Excel 应用程序实例
-            excel = win32com.client.GetActiveObject("Excel.Application")
-            
             # 刷新当前单元格
             self.refresh_current_cell()
             
@@ -193,17 +219,17 @@ class AutoCopyApp:
             content = pyperclip.paste()
             
             # 检查当前单元格是否已有内容
-            current_value = excel.ActiveCell.Value
+            current_value = self.excel_app.ActiveCell.Value
             if current_value:
                 # 如果单元格已有内容，则在现有内容后添加换行和新内容
                 self.log("Cell already has content, appending with new line")
                 # Excel中的换行符是Chr(10)
                 new_value = f"{current_value}{chr(10)}{content}"
-                excel.ActiveCell.Value = new_value
+                self.excel_app.ActiveCell.Value = new_value
                 self.log(f"Content appended to cell {self.current_cell}")
             else:
                 # 单元格为空，直接设置值
-                excel.ActiveCell.Value = content
+                self.excel_app.ActiveCell.Value = content
                 self.log(f"Content set to cell {self.current_cell}")
             
             # 记录成功粘贴的内容
@@ -218,17 +244,25 @@ class AutoCopyApp:
             if show_error_dialog:
                 messagebox.showerror("Paste Error", error_msg)
             return False  # 返回失败状态
-        finally:
-            # 清理 COM
-            pythoncom.CoUninitialize()
     
-    def update_clipboard_display(self):
+    def _get_clipboard_sequence_number(self):
+        """Return Windows clipboard sequence number to track duplicate copy events."""
+        try:
+            return windll.user32.GetClipboardSequenceNumber()
+        except Exception:
+            return None
+
+    def update_clipboard_display(self, force=False):
         """更新剪贴板内容显示"""
         try:
             content = pyperclip.paste()
             
+            # 检查内容是否有效以及是否发生变化
+            content_has_value = content and content.strip() != ""
+            content_changed = content != self.clipboard_content
+            
             # 只有在内容变化时更新 - 使用更严格的比较并防止重复触发
-            if content != self.clipboard_content and content.strip() != "":
+            if content_has_value and (content_changed or force):
                 # 记录上一次粘贴的内容和时间戳，用于防止重复处理
                 current_time = time.time()
                 
@@ -248,42 +282,53 @@ class AutoCopyApp:
                     if content_same and time_diff < duplicate_threshold:
                         is_duplicate = True
                         self.log(f"Ignored duplicate paste attempt (within {time_diff:.1f}s, threshold: {duplicate_threshold}s)")
+                    elif content_same and time_diff >= duplicate_threshold:
+                        # 时间已过阈值，允许重新粘贴相同内容
+                        self.log(f"Time threshold passed ({time_diff:.1f}s >= {duplicate_threshold}s), allowing paste of same content")
+                        is_duplicate = False
                 
                 # 更新记录的剪贴板内容
                 self.clipboard_content = content
                 
                 # 更新文本显示
-                self.clipboard_text.config(state=tk.NORMAL)
-                self.clipboard_text.delete(1.0, tk.END)
-                
-                # 限制显示长度，防止过长内容
-                if len(content) > 500:
-                    display_content = content[:500] + "... (content truncated)"
-                else:
-                    display_content = content
-                    
-                self.clipboard_text.insert(tk.END, display_content)
-                self.clipboard_text.config(state=tk.DISABLED)
+                clip_widget = getattr(self, "clipboard_text", None)
+                if clip_widget and clip_widget.winfo_exists():
+                    previous_state = clip_widget.cget("state")
+                    clip_widget.configure(state=tk.NORMAL)
+                    clip_widget.delete(1.0, tk.END)
+
+                    # 更新剪贴板显示
+                    if len(content) > 500:
+                        display_content = content[:500] + "... (content truncated)"
+                    else:
+                        display_content = content
+
+                    clip_widget.insert(tk.END, display_content)
+                    clip_widget.configure(state=previous_state)
+
                 
                 # 检查是否匹配格式
                 match_result = self.is_valid_format(content)
                 if match_result:
-                    # 检查是否与上次成功粘贴的内容相同
-                    is_same_as_last_pasted = hasattr(self, 'last_successful_paste_content') and content == self.last_successful_paste_content
-
-                    # 如果正在监控并且匹配成功且不是重复内容且不与上次粘贴内容相同，显示通知并自动粘贴
+                    # 如果正在监控并且匹配成功且不是重复内容，显示通知并自动粘贴
+                    skip_due_to_initial = False
                     if getattr(self, "ignore_initial_clipboard", False):
+                        initial_snapshot = getattr(self, "initial_clipboard_snapshot", "")
+                        if initial_snapshot and content == initial_snapshot:
+                            skip_due_to_initial = True
+                            self.log("Initial clipboard content ignored; waiting for the next clipboard change")
                         self.ignore_initial_clipboard = False
-                        self.log("Initial clipboard content ignored; waiting for the next clipboard change")
-                    elif self.running and not is_duplicate and not is_same_as_last_pasted:
+                        self.initial_clipboard_snapshot = ""
+                    
+                    if skip_due_to_initial:
+                        pass
+                    elif self.running and not is_duplicate:
                         # 保存此次操作数据，用于防止重复
                         self.last_pasted_content = content
                         self.last_paste_time = current_time
 
                         # 延迟一小段时间后执行粘贴操作，给UI时间更新
                         self.root.after(100, lambda: self.auto_paste_with_notification(content))
-                    elif is_same_as_last_pasted:
-                        self.log(f"Content same as last successful paste, skipping auto-paste")
                     elif is_duplicate:
                         self.log(f"Duplicate content detected within time threshold, skipping auto-paste")
                 else:
@@ -467,33 +512,45 @@ class AutoCopyApp:
         """定期检查Excel单元格"""
         if self.excel_app:
             try:
-                # 确保 COM 已初始化
-                pythoncom.CoInitialize()
-                # 重新获取 Excel 应用程序实例
-                excel = win32com.client.GetActiveObject("Excel.Application")
-                cell_address = excel.ActiveCell.Address
+                # 直接使用已有的 excel_app，不要重复初始化 COM
+                # UI 线程已经初始化过 COM 了
+                cell_address = self.excel_app.ActiveCell.Address
                 if cell_address != self.current_cell:
                     self.current_cell = cell_address
                     self.cell_label.config(text=cell_address)
                     if self.running:
                         self.log(f"Cell selection changed: {cell_address}")
+                # 成功获取单元格，重置错误计数器
+                self.cell_check_error_count = 0
             except Exception as e:
-                self.log(f"Error checking cell: {str(e)}")
-            finally:
-                pythoncom.CoUninitialize()
+                # 当用户正在编辑单元格时，ActiveCell 暂时不可访问，这是正常的
+                # 静默处理这些暂时性错误，保持连接
+                current_time = time.time()
+                self.cell_check_error_count += 1
+                
+                # 只在错误持续较长时间时才记录（避免刷屏）
+                # 前3次错误不记录（用户可能正在编辑）
+                if self.cell_check_error_count == 20:
+                    # 20次错误（约10秒）后记录一次警告
+                    self.log(f"Warning: Unable to access Excel cell for 10 seconds (editing in progress?)")
+                    self.last_cell_check_error_time = current_time
+                elif self.cell_check_error_count == 100:
+                    # 100次错误（约50秒）后记录严重警告
+                    self.log(f"Warning: Excel cell access error persists for 50 seconds")
+                    self.last_cell_check_error_time = current_time
+                
+                # 不再断开连接！保持连接状态，让用户手动决定
+                # 用户可以通过 "Connect to Excel" 按钮重新连接
         
-        # 每100毫秒检查一次单元格
-        self.excel_check_timer = self.root.after(100, self.schedule_cell_check)
+        # 每500毫秒检查一次单元格（降低频率，减少资源消耗）
+        self.excel_check_timer = self.root.after(500, self.schedule_cell_check)
     
     def refresh_current_cell(self):
         """刷新当前选中的单元格"""
         if self.excel_app:
             try:
-                # 确保 COM 已初始化
-                pythoncom.CoInitialize()
-                # 重新获取 Excel 应用程序实例
-                excel = win32com.client.GetActiveObject("Excel.Application")
-                cell_address = excel.ActiveCell.Address
+                # 直接使用已有的 excel_app
+                cell_address = self.excel_app.ActiveCell.Address
                 if cell_address != self.current_cell:
                     self.current_cell = cell_address
                     self.cell_label.config(text=cell_address)
@@ -502,11 +559,8 @@ class AutoCopyApp:
                         self.log(f"Cell selection changed: {cell_address}")
                 return True
             except Exception as e:
-                self.log(f"Error refreshing cell: {str(e)}")
+                # 静默处理错误，避免刷屏（schedule_cell_check 会处理）
                 return False
-            finally:
-                # 清理 COM
-                pythoncom.CoUninitialize()
         return False
     
     def connect_to_excel(self):
@@ -514,6 +568,9 @@ class AutoCopyApp:
         try:
             # 初始化COM线程 - 主UI线程
             pythoncom.CoInitialize()
+            
+            # 检查是否是重连
+            is_reconnect = self.excel_app is not None
             
             # 获取Excel应用程序实例
             self.excel_app = win32com.client.GetActiveObject("Excel.Application")
@@ -531,7 +588,16 @@ class AutoCopyApp:
             self.current_cell = cell_address
             self.cell_label.config(text=cell_address)
             
-            self.log(f"Connected to Excel. Workbook: {workbook_name}, Sheet: {sheet_name}")
+            # 重置错误计数器
+            self.cell_check_error_count = 0
+            self.last_cell_check_error_time = 0
+            
+            if is_reconnect:
+                self.log(f"Reconnected to Excel. Workbook: {workbook_name}, Sheet: {sheet_name}")
+                messagebox.showinfo("Reconnected", f"Successfully reconnected to Excel!\nWorkbook: {workbook_name}")
+            else:
+                self.log(f"Connected to Excel. Workbook: {workbook_name}, Sheet: {sheet_name}")
+            
             self.log(f"Current cell: {cell_address}")
             
             # 启动单元格监控 - 现在使用定时器代替线程
@@ -573,21 +639,21 @@ class AutoCopyApp:
                         self.current_cell = current_cell
                         
                         # 使用线程安全的方式更新UI
-                        self.root.after(0, lambda: self.cell_label.config(text=current_cell))
-                        self.root.after(0, lambda: self.log(f"Cell selection changed: {current_cell}"))
+                        self._run_on_ui_thread(self.cell_label.config, text=current_cell)
+                        self.log(f"Cell selection changed: {current_cell}")
                         
                         last_cell = current_cell
                         
                 except Exception as e:
                     # 如果出错，可能是Excel已关闭
-                    self.root.after(0, lambda: self.log(f"Excel monitoring error: {str(e)}"))
+                    self.log(f"Excel monitoring error: {str(e)}")
                     break
                 
                 # 短暂暂停以减少CPU使用
                 time.sleep(0.1)
                 
         except Exception as e:
-            self.root.after(0, lambda: self.log(f"Excel monitoring thread error: {str(e)}"))
+            self.log(f"Excel monitoring thread error: {str(e)}")
         finally:
             # 结束COM线程
             pythoncom.CoUninitialize()
@@ -643,16 +709,76 @@ class AutoCopyApp:
             messagebox.showerror("Error", f"Error setting target Excel: {str(e)}")
             self.log(f"Error setting target Excel: {str(e)}")
     
-    def log(self, message):
-        """添加消息到日志区域"""
+    def _execute_ui_task(self, task):
+        """Run a callable and surface exceptions without touching Tk from worker threads."""
         try:
-            self.log_text.configure(state=tk.NORMAL)
-            self.log_text.insert(tk.END, f"{time.strftime('%H:%M:%S')} - {message}\n")
-            self.log_text.see(tk.END)
-            self.log_text.configure(state=tk.DISABLED)
-        except Exception as e:
-            print(f"Log error: {e}")
+            task()
+        except Exception:
+            print("UI task raised an exception:")
+            traceback.print_exc()
+
+    def _run_on_ui_thread(self, callback, *args, **kwargs):
+        """Ensure UI mutations run on Tk's main thread."""
+        if not callable(callback):
+            return
+
+        task = functools.partial(callback, *args, **kwargs)
+        if threading.current_thread() is threading.main_thread():
+            self._execute_ui_task(task)
+        else:
+            try:
+                self.root.after(0, lambda: self._execute_ui_task(task))
+            except Exception:
+                print("Failed to schedule UI callback:")
+                traceback.print_exc()
     
+    def _setup_logging(self):
+        """Configure file logging and ensure logs directory exists."""
+        try:
+            self.logs_dir = Path.cwd() / "logs"
+            self.logs_dir.mkdir(parents=True, exist_ok=True)
+            self.log_file_path = self.logs_dir / "autocopy.log"
+
+            logger = logging.getLogger("AutoCopy")
+            logger.setLevel(logging.INFO)
+            logger.propagate = False
+
+            for handler in list(logger.handlers):
+                logger.removeHandler(handler)
+
+            handler = logging.FileHandler(self.log_file_path, encoding="utf-8")
+            handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
+            logger.addHandler(handler)
+
+            self.logger = logger
+            self.logger.info("File logging initialized at %s", self.log_file_path)
+        except Exception as exc:
+            self.logger = None
+            print(f"Logging setup failed: {exc}")
+
+    def log(self, message, level=logging.INFO):
+        """Write a message to both UI log and log file (if available)."""
+        message_text = str(message)
+        try:
+            if getattr(self, "logger", None):
+                self.logger.log(level, message_text)
+        except Exception as exc:
+            print(f"File logging error: {exc}")
+        if hasattr(self, "root") and hasattr(self, "log_text"):
+            def _write_to_ui():
+                try:
+                    widget = getattr(self, "log_text", None)
+                    if not widget or not widget.winfo_exists():
+                        return
+                    previous_state = widget.cget("state")
+                    widget.configure(state=tk.NORMAL)
+                    widget.insert(tk.END, f"{time.strftime('%H:%M:%S')} - {message_text}\n")
+                    widget.see(tk.END)
+                    widget.configure(state=previous_state)
+                except Exception as ui_error:
+                    print(f"Log error: {ui_error}")
+            self._run_on_ui_thread(_write_to_ui)
+
     def clear_log(self):
         """清除日志内容"""
         try:
@@ -710,11 +836,24 @@ class AutoCopyApp:
                             time.sleep(min(1.0 + 0.2 * consecutive_clipboard_errors, 2.0))
                         continue
 
-                    if current_content != self.previous_content:
-                        content_preview = current_content[:30] + "..." if current_content and len(current_content) > 30 else current_content
-                        self.log(f"New content detected: {content_preview}")
+                    sequence_number = self._get_clipboard_sequence_number()
+                    sequence_changed = False
+                    if sequence_number is not None:
+                        if self.last_clipboard_sequence is None or sequence_number != self.last_clipboard_sequence:
+                            sequence_changed = True
+                            self.last_clipboard_sequence = sequence_number
 
-                        self.root.after(0, self.update_clipboard_display)
+                    content_changed = current_content != self.previous_content
+
+                    if content_changed or sequence_changed:
+                        content_preview = current_content[:30] + "..." if current_content and len(current_content) > 30 else current_content
+                        if content_changed:
+                            self.log(f"New content detected: {content_preview}")
+                        else:
+                            self.log(f"Duplicate content detected: {content_preview}")
+
+                        force_refresh = not content_changed and sequence_changed
+                        self._run_on_ui_thread(lambda force=force_refresh: self.update_clipboard_display(force=force))
                         if self.excel_app:
                             self.refresh_current_cell()
 
@@ -767,17 +906,29 @@ class AutoCopyApp:
                 self.log(f"Current selected cell: {self.current_cell}")
 
             # 记录当前剪贴板，避免启动时立即自动粘贴
-            self.ignore_initial_clipboard = True
+            self.ignore_initial_clipboard = False
+            self.initial_clipboard_snapshot = ""
             try:
                 baseline_clipboard = pyperclip.paste()
                 if baseline_clipboard is None:
                     baseline_clipboard = ""
                 self.previous_content = baseline_clipboard
+                self.initial_clipboard_snapshot = baseline_clipboard
+                if baseline_clipboard.strip():
+                    try:
+                        self.ignore_initial_clipboard = bool(self.is_valid_format(baseline_clipboard))
+                    except Exception:
+                        self.ignore_initial_clipboard = True
+                else:
+                    self.ignore_initial_clipboard = False
                 self.log("Initial clipboard snapshot captured; waiting for next change")
             except Exception as snapshot_error:
                 self.previous_content = ""
+                self.initial_clipboard_snapshot = ""
                 self.log(f"Initial clipboard snapshot failed, continuing with monitoring: {snapshot_error}")
                 traceback.print_exc()
+
+            self.last_clipboard_sequence = self._get_clipboard_sequence_number()
 
             # 更新剪贴板显示
             self.update_clipboard_display()
@@ -817,6 +968,8 @@ class AutoCopyApp:
                 self.confirmation_dialog = None
                 
             self.log("Monitoring stopped")
+            self.ignore_initial_clipboard = False
+            self.initial_clipboard_snapshot = ""
         except Exception as e:
             self.log(f"Stop monitoring error: {str(e)}")
     
@@ -1046,11 +1199,7 @@ def main():
     try:
         root = tk.Tk()
         app = AutoCopyApp(root)
-        # 设置图标
-        try:
-            root.iconbitmap("clipboard.ico")
-        except:
-            pass
+        set_app_window_icon(root)
         root.geometry("700x900")  # 启动时更大，确保所有控件显示
         root.minsize(600, 800)
         root.mainloop()
