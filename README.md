@@ -60,13 +60,13 @@ pip install -r requirements.txt
 ### 运行开发版本
 
 ```bash
-python auto_copy_gui.py
+python autocopy_main.py
 ```
 
 ### 打包为可执行文件
 
 ```bash
-pyinstaller --onefile --noconsole --name="AutoCopy" --icon="resources/icons/autocopy.ico" auto_copy_gui.py
+pyinstaller --onefile --noconsole --name="AutoCopy" --icon="resources/icons/autocopy.ico" autocopy_main.py
 ```
 
 打包后的可执行文件位于 `dist/AutoCopy.exe`

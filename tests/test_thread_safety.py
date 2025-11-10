@@ -2,7 +2,7 @@ import os
 import threading
 import unittest
 
-import auto_copy_gui
+import autocopy_main
 
 
 class DummyRoot:
@@ -35,7 +35,7 @@ class DummyText:
 
 class ThreadSafetyTests(unittest.TestCase):
     def setUp(self):
-        self.app = auto_copy_gui.AutoCopyApp.__new__(auto_copy_gui.AutoCopyApp)
+        self.app = autocopy_main.AutoCopyApp.__new__(autocopy_main.AutoCopyApp)
         self.app.root = DummyRoot()
         self.app.log_text = DummyText()
 
@@ -71,12 +71,12 @@ class ThreadSafetyTests(unittest.TestCase):
         self.assertEqual(
             self.app.log_text.inserted,
             [
-                (auto_copy_gui.tk.END, "hello"),
-                (auto_copy_gui.tk.END, os.linesep),
+                (autocopy_main.tk.END, "hello"),
+                (autocopy_main.tk.END, os.linesep),
             ],
         )
-        self.assertEqual(self.app.log_text.state, auto_copy_gui.tk.DISABLED)
-        self.assertEqual(self.app.log_text.seen, auto_copy_gui.tk.END)
+        self.assertEqual(self.app.log_text.state, autocopy_main.tk.DISABLED)
+        self.assertEqual(self.app.log_text.seen, autocopy_main.tk.END)
 
 
 if __name__ == "__main__":
