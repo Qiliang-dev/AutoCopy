@@ -69,6 +69,7 @@ class AutoCopyApp(ClipboardMixin, ActivityMixin, ExcelMixin):
         self.last_cell_check_error_time = 0  # 新增：上次单元格检查错误时间
         self.clipboard_display_error_count = 0  # 剪贴板显示错误计数器
         self.last_clipboard_display_error_time = 0  # 上次剪贴板显示错误时间
+        self.clipboard_update_job = None  # Track scheduled clipboard refresh callbacks
         
         # ✅ CRITICAL FIX: Initialize message queue for thread-safe Excel operations
         self.message_queue = queue.Queue()
@@ -253,7 +254,7 @@ class AutoCopyApp(ClipboardMixin, ActivityMixin, ExcelMixin):
     def _setup_logging(self):
         """Configure file logging and ensure logs directory exists."""
         try:
-            from logging.handlers import RotatingFileHandler
+            from logging.handlers import RotatingFileHandler, TimedRotatingFileHandler
 
             self.logs_dir = Path.cwd() / "logs"
             self.logs_dir.mkdir(parents=True, exist_ok=True)
@@ -266,12 +267,14 @@ class AutoCopyApp(ClipboardMixin, ActivityMixin, ExcelMixin):
             for handler in list(logger.handlers):
                 logger.removeHandler(handler)
 
-            # 使用 RotatingFileHandler：最大 5MB，保留 3 个备份文件
-            handler = RotatingFileHandler(
-                self.log_file_path, 
-                maxBytes=5*1024*1024,  # 5MB
-                backupCount=3,
-                encoding="utf-8"
+            # 改为按天分割日志：每天 0 点切分，默认保留 7 天
+            handler = TimedRotatingFileHandler(
+                self.log_file_path,
+                when="midnight",
+                interval=1,
+                backupCount=7,
+                encoding="utf-8",
+                utc=False
             )
             handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
             logger.addHandler(handler)

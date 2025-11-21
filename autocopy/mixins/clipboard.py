@@ -154,7 +154,10 @@ class ClipboardMixin:
 
     def update_clipboard_display(self, force: bool = False):
         """更新剪贴板显示 (runs on main thread)."""
+        is_monitoring = getattr(self, "running", False)
         try:
+            # Clear any pending job marker; this call is the active one
+            self.clipboard_update_job = None
             # ✅ CRITICAL FIX: Use lock to protect pyperclip access (not thread-safe!)
             with self.clipboard_lock:
                 content = pyperclip.paste()
@@ -209,7 +212,7 @@ class ClipboardMixin:
 
                 # 校验格式
                 match_result = self.is_valid_format(content)
-                if match_result:
+                if match_result and is_monitoring:
                     skip_due_to_initial = False
                     if getattr(self, "ignore_initial_clipboard", False):
                         initial_snapshot = getattr(self, "initial_clipboard_snapshot", "")
@@ -220,11 +223,12 @@ class ClipboardMixin:
                     if not skip_due_to_initial and not is_duplicate:
                         # 有效内容，发送粘贴请求到队列（不直接操作Excel）
                         self.message_queue.put({'type': 'paste_content', 'content': content})
-                elif self.running and content_changed:
+                elif is_monitoring and content_changed:
                     self.log("Clipboard content does not match pattern")
 
-            # 定时检查
-            self.root.after(1000, self.update_clipboard_display)
+            # 定时检查（仅在运行状态下继续轮询）
+            if is_monitoring:
+                self.clipboard_update_job = self.root.after(1000, self.update_clipboard_display)
 
         except Exception as e:
             error_str = str(e)
@@ -272,7 +276,8 @@ class ClipboardMixin:
 
                 retry_delay = min(1000 + (self.clipboard_display_error_count * 200), 5000)
 
-            self.root.after(retry_delay, self.update_clipboard_display)
+            if is_monitoring:
+                self.clipboard_update_job = self.root.after(retry_delay, self.update_clipboard_display)
 
     def show_success_notification(self, content: str):
         """显示成功通知 (runs on main thread)."""
@@ -556,6 +561,22 @@ class ClipboardMixin:
             if self.confirmation_dialog and self.confirmation_dialog.winfo_exists():
                 self.confirmation_dialog.destroy()
                 self.confirmation_dialog = None
+
+            # Cancel any scheduled clipboard polling callbacks
+            if getattr(self, "clipboard_update_job", None):
+                try:
+                    self.root.after_cancel(self.clipboard_update_job)
+                except Exception:
+                    pass
+                self.clipboard_update_job = None
+
+            # Ensure the monitor thread is not left running in background
+            if hasattr(self, "monitor_thread") and self.monitor_thread and self.monitor_thread.is_alive():
+                try:
+                    self.monitor_thread.join(timeout=1.0)
+                except Exception:
+                    pass
+                self.monitor_thread = None
 
             self.log("Monitoring stopped")
             self.ignore_initial_clipboard = False
