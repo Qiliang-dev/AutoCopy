@@ -1,5 +1,5 @@
 """
-AutoCopy v1.9 打包脚本
+AutoCopy v1.91 打包脚本
 使用PyInstaller打包成独立exe文件
 """
 
@@ -11,7 +11,7 @@ def build_exe():
     """打包AutoCopy为exe文件"""
     
     print("=" * 70)
-    print("  AutoCopy v1.9 打包脚本")
+    print("  AutoCopy v1.91 打包脚本")
     print("=" * 70)
     print()
     
@@ -45,7 +45,7 @@ def build_exe():
     # PyInstaller参数
     cmd = [
         "pyinstaller",
-        "--name=Autocopy_V1.9",           # 输出文件名
+        "--name=Autocopy_V1.91",           # 输出文件名
         "--onefile",                       # 打包成单个文件
         "--noconsole",                     # ✅ 不显示命令行窗口
         "--clean",                         # 清理临时文件
@@ -94,13 +94,13 @@ def build_exe():
         print("=" * 70)
         print()
         
-        exe_file = script_dir / "dist" / "Autocopy_V1.9.exe"
+        exe_file = script_dir / "dist" / "Autocopy_V1.91.exe"
         if exe_file.exists():
             size_mb = exe_file.stat().st_size / (1024 * 1024)
             print(f"📦 输出文件: {exe_file}")
             print(f"📊 文件大小: {size_mb:.2f} MB")
             print()
-            print("🎉 现在可以运行 Autocopy_V1.9.exe 了！")
+            print("🎉 现在可以运行 Autocopy_V1.91.exe 了！")
             print()
             print("特性:")
             print("  ✅ 无命令行窗口")
