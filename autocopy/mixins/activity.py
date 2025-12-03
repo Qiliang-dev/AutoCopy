@@ -1,106 +1,99 @@
-import ctypes
-import time
-
 import tkinter as tk
-from ctypes import windll
-from ctypes import wintypes
-
+import tkinter.font as tkfont
 import win32api
 
 
 class ActivityMixin:
-    """Encapsulate activity monitoring and reminder dialog logic."""
+    """Reminder dialog logic (repurposed from the old inactivity checker)."""
 
     def start_activity_monitoring(self):
-        """开始监控用户活动"""
+        """Show and keep updating the reminder dialog when enabled."""
         if not getattr(self, "reminder_enabled_var", None) or not self.reminder_enabled_var.get():
             self.stop_activity_monitoring()
             return
 
         self.activity_monitor_active = True
-        self.last_activity_time = time.time()
-        self.activity_detected = False
-
-        cursor = wintypes.POINT()
-        windll.user32.GetCursorPos(ctypes.byref(cursor))
-        self.last_mouse_pos = (cursor.x, cursor.y)
-
-        self._check_activity()
-
-    def _check_activity(self):
-        """检查活动状态"""
-        if not self.activity_monitor_active:
-            return
-        if not self.reminder_enabled_var or not self.reminder_enabled_var.get():
-            self.stop_activity_monitoring()
-            return
-
-        try:
-            cursor = wintypes.POINT()
-            windll.user32.GetCursorPos(ctypes.byref(cursor))
-            current_pos = (cursor.x, cursor.y)
-
-            if current_pos != self.last_mouse_pos:
-                self.log("Mouse movement detected")
-                self.activity_detected = True
-                self.last_mouse_pos = current_pos
-
-            for key in range(0x30, 0x5A):
-                if windll.user32.GetAsyncKeyState(key) & 0x8000:
-                    self.log("Keyboard activity detected")
-                    self.activity_detected = True
-                    break
-
-            if self.activity_detected:
-                self.log("Activity detected - stopping monitoring")
-                self.stop_activity_monitoring()
-                if self.reminder_dialog and self.reminder_dialog.winfo_exists():
-                    self.reminder_dialog.destroy()
-                    self.reminder_dialog = None
-                return
-
-            current_time = time.time()
-            time_since_last_activity = current_time - self.last_activity_time
-
-            try:
-                reminder_time = int(self.reminder_time_var.get())
-            except (ValueError, AttributeError):
-                reminder_time = self.reminder_time
-
-            if time_since_last_activity >= reminder_time:
-                self.log("No activity detected for specified time - showing reminder")
-                self.show_reminder_dialog()
-                self.stop_activity_monitoring()
-            else:
-                self.root.after(100, self._check_activity)
-
-        except Exception as e:
-            self.log(f"Activity check error: {str(e)}")
-            self.root.after(100, self._check_activity)
+        self.show_reminder_dialog()
+        self._schedule_reminder_refresh()
 
     def stop_activity_monitoring(self):
-        """停止活动监控"""
+        """Stop reminder refresh loop and close dialog if reminder is off."""
         self.activity_monitor_active = False
-        self.activity_detected = False
-        if self.reminder_timer:
-            self.root.after_cancel(self.reminder_timer)
-            self.reminder_timer = None
-        if self._reminder_flash_job and self.reminder_dialog:
+        # Cancel periodic refresh
+        try:
+            if getattr(self, "_reminder_update_job", None) and self.reminder_dialog and self.reminder_dialog.winfo_exists():
+                self.reminder_dialog.after_cancel(self._reminder_update_job)
+        except Exception:
+            pass
+        self._reminder_update_job = None
+
+        # Cancel flashing if any (legacy)
+        if getattr(self, "_reminder_flash_job", None) and self.reminder_dialog:
             try:
                 self.reminder_dialog.after_cancel(self._reminder_flash_job)
             except Exception:
                 pass
         self._reminder_flash_job = None
 
+        # Destroy dialog only if reminder is no longer enabled
+        if not (self.reminder_enabled_var and self.reminder_enabled_var.get()):
+            if self.reminder_dialog and self.reminder_dialog.winfo_exists():
+                try:
+                    self.reminder_dialog.destroy()
+                except Exception:
+                    pass
+                self.reminder_dialog = None
+
+    def _schedule_reminder_refresh(self):
+        """Kick off refresh loop for reminder content."""
+        if not self.activity_monitor_active:
+            return
+        if not self.reminder_enabled_var or not self.reminder_enabled_var.get():
+            self.stop_activity_monitoring()
+            return
+
+        self._refresh_reminder_content()
+        if self.reminder_dialog and self.reminder_dialog.winfo_exists():
+            try:
+                self._reminder_update_job = self.reminder_dialog.after(800, self._schedule_reminder_refresh)
+            except Exception:
+                pass
+
+    def _refresh_reminder_content(self):
+        """Render current column history into the reminder dialog."""
+        if not (self.reminder_dialog and self.reminder_dialog.winfo_exists()):
+            return
+
+        content_text = ""
+        try:
+            summary = self.get_preceding_cells_summary()
+            content_text = summary
+        except Exception as exc:
+            content_text = f"Failed to read Excel data: {exc}"
+            self.log(content_text)
+
+        widget = getattr(self, "reminder_content_widget", None)
+        if widget and widget.winfo_exists():
+            widget.configure(state=tk.NORMAL)
+            widget.delete(1.0, tk.END)
+            widget.insert(tk.END, content_text)
+            widget.configure(state=tk.DISABLED)
+
     def show_reminder_dialog(self):
+        """Create or lift the reminder dialog."""
         if not self.reminder_enabled_var or not self.reminder_enabled_var.get():
             return
         if self.reminder_dialog and self.reminder_dialog.winfo_exists():
+            try:
+                self.reminder_dialog.lift()
+            except Exception:
+                pass
             return
 
         self.reminder_dialog = tk.Toplevel(self.root)
-        self.reminder_dialog.title("Activity Reminder")
+        self.reminder_dialog.title("Reminder - Excel Context")
         self.reminder_dialog.attributes('-topmost', True)
+        self.reminder_dialog.resizable(True, True)
 
         monitors = []
         try:
@@ -124,68 +117,134 @@ class ActivityMixin:
             }]
 
         target_monitor = monitors[0]
-
-        window_width = 1200
-        window_height = 800
+        window_width = 900
+        window_height = 600
         x = target_monitor['left'] + (target_monitor['width'] - window_width) // 2
         y = target_monitor['top'] + (target_monitor['height'] - window_height) // 2
         self.reminder_dialog.geometry(f"{window_width}x{window_height}+{x}+{y}")
 
-        self._reminder_bg_colors = ["#FFE4E1", "#FF0000"]
-        self._reminder_bg_index = 0
-        self._reminder_flash_job = None
+        container = tk.Frame(self.reminder_dialog, bg="#1b1f38")
+        container.pack(fill=tk.BOTH, expand=True)
 
-        self.reminder_dialog.configure(bg=self._reminder_bg_colors[self._reminder_bg_index])
+        # Shared fonts that will scale with window resize
+        self._reminder_fonts = {
+            "header": tkfont.Font(family="Segoe UI", size=14, weight="bold"),
+            "info": tkfont.Font(family="Segoe UI", size=10),
+            "body": tkfont.Font(family="Consolas", size=10),
+        }
 
-        frame = tk.Frame(self.reminder_dialog, bg=self._reminder_bg_colors[self._reminder_bg_index], padx=30, pady=30)
-        frame.pack(fill=tk.BOTH, expand=True)
-
-        warning_label = tk.Label(frame, text="??", font=("Arial", 72), bg=self._reminder_bg_colors[self._reminder_bg_index])
-        warning_label.pack(pady=(0, 20))
-
-        message = "NO ACTIVITY DETECTED!\n\nPlease continue your work or close this window."
-        text_label = tk.Label(
-            frame,
-            text=message,
-            font=("Arial", 16, "bold"),
-            justify=tk.CENTER,
-            bg=self._reminder_bg_colors[self._reminder_bg_index],
-            fg="#8B0000"
+        header = tk.Label(
+            container,
+            text="当前选中单元格的前置内容",
+            font=self._reminder_fonts["header"],
+            fg="#e4e7fb",
+            bg="#1b1f38",
+            pady=12
         )
-        text_label.pack(pady=20)
+        header.pack(fill=tk.X)
 
-        close_button = tk.Button(
-            frame,
-            text="CLOSE",
-            command=self.reminder_dialog.destroy,
-            font=("Arial", 12, "bold"),
-            bg="#FF6B6B",
+        info_label = tk.Label(
+            container,
+            text="实时读取选中列，向上展示到当前单元格之前的所有行（含合并单元格）。",
+            font=self._reminder_fonts["info"],
+            fg="#9aa2d4",
+            bg="#1b1f38"
+        )
+        info_label.pack(fill=tk.X, padx=12)
+
+        body = tk.Frame(container, bg="#1b1f38", padx=12, pady=12)
+        body.pack(fill=tk.BOTH, expand=True)
+
+        text_widget = tk.Text(
+            body,
+            height=20,
+            wrap=tk.WORD,
+            font=self._reminder_fonts["body"],
+            bg="#0f1224",
+            fg="#e4e7fb",
+            insertbackground="#e4e7fb"
+        )
+        text_widget.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        text_widget.configure(state=tk.DISABLED)
+        self.reminder_content_widget = text_widget
+
+        scrollbar = tk.Scrollbar(body, command=text_widget.yview)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        text_widget.configure(yscrollcommand=scrollbar.set)
+
+        button_bar = tk.Frame(container, bg="#1b1f38")
+        button_bar.pack(fill=tk.X, pady=(0, 10))
+
+        close_btn = tk.Button(
+            button_bar,
+            text="关闭提醒",
+            command=lambda: self._disable_reminder_from_dialog(),
+            font=("Segoe UI", 10, "bold"),
+            bg="#f26b38",
             fg="white",
-            relief=tk.RAISED,
-            padx=20,
-            pady=10
+            padx=12,
+            pady=6,
+            relief=tk.FLAT
         )
-        close_button.pack(pady=20)
+        close_btn.pack(side=tk.RIGHT, padx=12)
 
-        self.reminder_dialog.bind("<Motion>", lambda e: self.reminder_dialog.destroy())
-        self.reminder_dialog.bind("<Key>", lambda e: self.reminder_dialog.destroy())
-        self.reminder_dialog.bind("<Button>", lambda e: self.reminder_dialog.destroy())
+        self._refresh_reminder_content()
+        self._start_reminder_flash(text_widget)
+        # Bind resize to scale fonts
+        self.reminder_dialog.bind("<Configure>", self._on_reminder_resize)
 
-        self._reminder_flash_bg()
-
-    def _reminder_flash_bg(self):
-        if not self.reminder_enabled_var or not self.reminder_enabled_var.get():
-            return
-        if not (self.reminder_dialog and self.reminder_dialog.winfo_exists()):
-            return
-        self._reminder_bg_index = 1 - self._reminder_bg_index
-        color = self._reminder_bg_colors[self._reminder_bg_index]
-        self.reminder_dialog.configure(bg=color)
-        for child in self.reminder_dialog.winfo_children():
+    def _disable_reminder_from_dialog(self):
+        """Turn off reminder via dialog button."""
+        try:
+            if self.reminder_enabled_var:
+                self.reminder_enabled_var.set(False)
+        except Exception:
+            pass
+        self.stop_activity_monitoring()
+        if self.reminder_dialog and self.reminder_dialog.winfo_exists():
             try:
-                child.configure(bg=color)
-                for subchild in child.winfo_children():
-                    subchild.configure(bg=color)
+                self.reminder_dialog.destroy()
             except Exception:
                 pass
-        self._reminder_flash_job = self.reminder_dialog.after(500, self._reminder_flash_bg)
+            self.reminder_dialog = None
+
+    def _start_reminder_flash(self, widget: tk.Text):
+        """Flash text color to make it noticeable."""
+        try:
+            if self._reminder_flash_job and self.reminder_dialog and self.reminder_dialog.winfo_exists():
+                self.reminder_dialog.after_cancel(self._reminder_flash_job)
+        except Exception:
+            pass
+
+        colors = ["#e4e7fb", "#ffc857"]
+        state = {"idx": 0}
+
+        def _toggle():
+            if not (self.reminder_dialog and self.reminder_dialog.winfo_exists()):
+                return
+            try:
+                state["idx"] = 1 - state["idx"]
+                widget.configure(fg=colors[state["idx"]])
+            except Exception:
+                pass
+            try:
+                self._reminder_flash_job = self.reminder_dialog.after(650, _toggle)
+            except Exception:
+                pass
+
+        _toggle()
+
+    def _on_reminder_resize(self, event):
+        """Adapt font sizes based on window height for better readability."""
+        if not hasattr(self, "_reminder_fonts"):
+            return
+        try:
+            h = max(event.height, 200)
+            header_size = max(12, min(28, h // 24))
+            info_size = max(10, min(20, h // 36))
+            body_size = max(10, min(22, h // 32))
+            self._reminder_fonts["header"].configure(size=header_size)
+            self._reminder_fonts["info"].configure(size=info_size)
+            self._reminder_fonts["body"].configure(size=body_size)
+        except Exception:
+            pass

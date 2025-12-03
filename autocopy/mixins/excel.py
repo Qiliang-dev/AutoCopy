@@ -16,6 +16,70 @@ class ExcelMixin:
     The schedule_cell_check method runs on the main thread using Tkinter's after() mechanism.
     """
 
+    def _column_letter(self, col_num: int) -> str:
+        """Convert column number to Excel-style letter."""
+        col = ""
+        while col_num > 0:
+            col_num, remainder = divmod(col_num - 1, 26)
+            col = chr(65 + remainder) + col
+        return col
+
+    def get_preceding_cells_summary(self, max_rows: int = 200) -> str:
+        """Return a summary of all cells above the current cell in the same column.
+
+        Includes merged cells (the merge range is shown once), capped by max_rows
+        to avoid huge payloads.
+        """
+        if not getattr(self, "excel_app", None):
+            return "Excel未连接，请先点击 Connect to Excel。"
+
+        try:
+            active_cell = self.excel_app.ActiveCell
+            sheet = active_cell.Worksheet
+            current_row = active_cell.Row
+            current_col = active_cell.Column
+        except Exception as exc:
+            return f"无法读取当前单元格：{exc}"
+
+        col_letter = self._column_letter(current_col)
+
+        if current_row <= 1:
+            return f"当前单元格: {active_cell.Address(False, False)}\n列: {col_letter}\n\n上方没有内容。"
+
+        start_row = max(1, current_row - max_rows)
+        seen_merges = set()
+        lines = []
+
+        for row_idx in range(start_row, current_row):
+            try:
+                cell = sheet.Cells(row_idx, current_col)
+                source_addr = cell.Address(False, False)
+                display_value = cell.Value
+                if cell.MergeCells:
+                    merge_area = cell.MergeArea
+                    merge_addr = merge_area.Address(False, False)
+                    if merge_addr in seen_merges:
+                        continue
+                    seen_merges.add(merge_addr)
+                    source_addr = merge_addr
+                    try:
+                        display_value = merge_area.Cells(1, 1).Value
+                    except Exception:
+                        pass
+
+                display_value = "(empty)" if display_value in (None, "") else str(display_value)
+                lines.append(f"{source_addr}: {display_value}")
+            except Exception as exc:
+                lines.append(f"{col_letter}{row_idx}: [error reading: {exc}]")
+
+        header = f"当前单元格: {active_cell.Address(False, False)}\n列: {col_letter}\n"
+        if not lines:
+            body = "上方没有内容。"
+        else:
+            body = "\n".join(lines)
+
+        return header + "\n" + body
+
     def schedule_cell_check(self):
         """轮询 Excel 活动单元格 (runs on main thread only).
         

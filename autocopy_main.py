@@ -47,12 +47,12 @@ class AutoCopyApp(ClipboardMixin, ActivityMixin, ExcelMixin):
         self.last_clipboard_sequence = self._get_clipboard_sequence_number()  # 上次粘贴的时间戳
         self.auto_move_next = False  # 新增：是否自动移动到下一行
         self.row_skip_count = 1  # 新增：自动移动时跳过的行数
-        self.reminder_time = 20  # 新增：提醒等待时间（秒）
-        self.reminder_timer = None  # 新增：提醒定时器
-        self.reminder_dialog = None  # 新增：提醒对话框
+        self.reminder_dialog = None  # 提醒对话框
         self.reminder_enabled_var = None  # GUI toggle for reminder prompt
-        self.reminder_spinbox = None  # Reference to reminder time input
+        self.reminder_spinbox = None  # deprecated placeholder
         self._reminder_flash_job = None
+        self._reminder_update_job = None
+        self.reminder_content_widget = None
         self._duplicate_logged = False
         self._faulthandler_file = None
         self.last_activity_time = 0  # 新增：最后活动时间
@@ -188,11 +188,6 @@ class AutoCopyApp(ClipboardMixin, ActivityMixin, ExcelMixin):
         duplicate_entry.grid(row=1, column=1, sticky=tk.W, padx=2, pady=2)
         ttk.Label(format_frame, text="(No duplicate paste in seconds)", font=("Arial", 8)).grid(row=1, column=2, sticky=tk.W, padx=2, pady=2)
         
-        ttk.Label(format_frame, text="Reminder Time (s):").grid(row=2, column=0, sticky=tk.W, padx=5, pady=2)
-        self.reminder_time_var = tk.StringVar(value=str(self.reminder_time))
-        reminder_entry = ttk.Spinbox(format_frame, from_=5, to=300, width=5, textvariable=self.reminder_time_var)
-        reminder_entry.grid(row=2, column=1, sticky=tk.W, padx=2, pady=2)
-        self.reminder_spinbox = reminder_entry
         self.reminder_enabled_var = tk.BooleanVar(value=False)
         reminder_checkbox = ttk.Checkbutton(
             format_frame,
@@ -200,8 +195,7 @@ class AutoCopyApp(ClipboardMixin, ActivityMixin, ExcelMixin):
             variable=self.reminder_enabled_var,
             command=self.on_reminder_toggle
         )
-        reminder_checkbox.grid(row=2, column=2, sticky=tk.W, padx=10, pady=2)
-        reminder_entry.config(state=tk.DISABLED)
+        reminder_checkbox.grid(row=2, column=0, sticky=tk.W, padx=5, pady=2)
         
         ttk.Label(format_frame, text="Row Skip Count:").grid(row=3, column=0, sticky=tk.W, padx=5, pady=2)
         self.row_skip_var = tk.StringVar(value=str(self.row_skip_count))
@@ -341,20 +335,15 @@ class AutoCopyApp(ClipboardMixin, ActivityMixin, ExcelMixin):
 
     def on_reminder_toggle(self):
         """Toggle reminder functionality without losing user settings."""
-        if self.reminder_spinbox:
-            new_state = tk.NORMAL if self.reminder_enabled_var.get() else tk.DISABLED
-            self.reminder_spinbox.config(state=new_state)
-
         self.stop_activity_monitoring()
 
-        if self.reminder_dialog and self.reminder_dialog.winfo_exists():
-            self.reminder_dialog.destroy()
-            self.reminder_dialog = None
-
         if self.reminder_enabled_var and self.reminder_enabled_var.get():
-            self.last_activity_time = time.time()
-            if self.running:
-                self.start_activity_monitoring()
+            # Immediately show/update reminder dialog when toggled on
+            self.start_activity_monitoring()
+        else:
+            if self.reminder_dialog and self.reminder_dialog.winfo_exists():
+                self.reminder_dialog.destroy()
+                self.reminder_dialog = None
 
         state_text = 'enabled' if (self.reminder_enabled_var and self.reminder_enabled_var.get()) else 'disabled'
         self.log(f'Reminder feature {state_text}')
@@ -421,17 +410,9 @@ class AutoCopyApp(ClipboardMixin, ActivityMixin, ExcelMixin):
                 if 'duplicate_time' in settings:
                     self.duplicate_time_var.set(str(settings['duplicate_time']))
                 
-                if 'reminder_time' in settings:
-                    self.reminder_time = settings['reminder_time']
-                    self.reminder_time_var.set(str(settings['reminder_time']))
-                
                 if 'reminder_enabled' in settings:
                     self.reminder_enabled_var.set(settings['reminder_enabled'])
-                    # 更新spinbox状态
-                    if self.reminder_spinbox:
-                        state = tk.NORMAL if settings['reminder_enabled'] else tk.DISABLED
-                        self.reminder_spinbox.config(state=state)
-                
+
                 if 'auto_move_next' in settings:
                     self.auto_move_next = settings['auto_move_next']
                     button_text = "Auto Move Next: ON" if self.auto_move_next else "Auto Move Next: OFF"
@@ -458,7 +439,6 @@ class AutoCopyApp(ClipboardMixin, ActivityMixin, ExcelMixin):
             settings = {
                 'row_skip_count': int(self.row_skip_var.get()) if hasattr(self, 'row_skip_var') else self.row_skip_count,
                 'duplicate_time': float(self.duplicate_time_var.get()) if hasattr(self, 'duplicate_time_var') else 3,
-                'reminder_time': int(self.reminder_time_var.get()) if hasattr(self, 'reminder_time_var') else self.reminder_time,
                 'reminder_enabled': self.reminder_enabled_var.get() if hasattr(self, 'reminder_enabled_var') and self.reminder_enabled_var else False,
                 'auto_move_next': self.auto_move_next,
                 'pattern': self.format_var.get() if hasattr(self, 'format_var') else r'^20\d{2}_\d{2}_\d{2}_\d{6}',
